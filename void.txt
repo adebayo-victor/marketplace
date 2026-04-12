@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Marketplace | Campus Hub</title>
+    <style>
+        :root { --accent: #000000; --bg: #ffffff; --gray: #f4f4f4; }
+        body { font-family: 'Helvetica Neue', sans-serif; margin: 0; background: var(--bg); color: var(--accent); }
+        
+        /* Hero Section */
+        .hero-banner {
+            height: 70vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            background: var(--accent);
+            color: white;
+            padding: 40px;
+        }
+        .hero-banner h1 { font-size: 4rem; letter-spacing: -2px; margin: 0; }
+        .hero-banner p { font-size: 1.2rem; opacity: 0.8; margin-top: 10px; }
+
+        /* Navigation Buttons */
+        .nav-container { margin-top: 40px; display: flex; gap: 20px; }
+        .btn { 
+            padding: 15px 30px; 
+            border: 2px solid white; 
+            background: transparent; 
+            color: white; 
+            font-weight: bold; 
+            cursor: pointer; 
+            transition: 0.3s;
+            text-decoration: none;
+        }
+        .btn-filled { background: white; color: black; }
+        .btn:hover { opacity: 0.7; transform: scale(1.05); }
+
+        /* Featured Shops Section */
+        .preview-section { padding: 80px 20px; text-align: center; }
+        .grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
+            gap: 20px; 
+            max-width: 1000px; 
+            margin: 40px auto; 
+        }
+        .shop-card { 
+            border: 1px solid #ddd; 
+            padding: 30px; 
+            border-radius: 4px; 
+            transition: 0.3s;
+            cursor: pointer;
+        }
+        .shop-card:hover { border-color: black; background: var(--gray); }
+    </style>
+</head>
+<body>
+
+    <header class="hero-banner">
+        <h1>MARKETPLACE.</h1>
+        <p>The definitive trade hub for the modern campus.</p>
+        
+        <div class="nav-container">
+            <a href="/register/customer" class="btn btn-filled">Join as Buyer</a>
+            <a href="/register/merchant" class="btn">Sell as Merchant</a>
+            <a href="/login-choice" class="btn">Sign In</a>
+        </div>
+    </header>
+
+    <section class="preview-section">
+        <h2>Live Shops 🏛️</h2>
+        <div class="grid">
+            {% for shop in shops %}
+            <div class="shop-card" onclick="location.href='/shop/{{ shop.shop_slug }}'">
+                <h3>{{ shop.shop_name }}</h3>
+                <small>Explore →</small>
+            </div>
+            {% endfor %}
+            <div class="shop-card" onclick="location.href='/marketplace'" style="background: black; color: white;">
+                <h3>Enter Full Marketplace</h3>
+                <small>Discover All →</small>
+            </div>
+        </div>
+    </section>
+
+</body>
+</html>

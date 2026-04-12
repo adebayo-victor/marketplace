@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vicade Marketplace | Discovery Hub</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;900&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+    <style>
+        :root { 
+            --bg: #0a0a0a;
+            --surface: #121212;
+            --accent-primary: #ff3e00;
+            --accent-secondary: #7000ff;
+            --text-high: #ffffff;
+            --text-low: #888888;
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body { 
+            font-family: 'Outfit', sans-serif; 
+            background: var(--bg); 
+            color: var(--text-high); 
+            line-height: 1.4;
+            padding-bottom: 100px;
+            overflow-x: hidden;
+        }
+
+        /* Navigation Header */
+        header { 
+            padding: 25px 5%; 
+            border-bottom: 1px solid var(--glass-border); 
+            position: sticky; top: 0; 
+            background: rgba(10, 10, 10, 0.8); 
+            backdrop-filter: blur(20px);
+            z-index: 1000;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        header h1 { 
+            font-family: 'Syne', sans-serif;
+            font-size: 1.5rem; margin: 0; letter-spacing: -1.5px; text-transform: uppercase; 
+            background: linear-gradient(90deg, #fff, #888);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* View Switching */
+        .view-section { display: none; min-height: 80vh; }
+        .view-section.active { display: block; animation: fadeInUp 0.5s ease-out; }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* --- DISCOVERY VIEW --- */
+        .section-label {
+            padding: 30px 5% 10px;
+            font-size: 0.7rem; letter-spacing: 4px; color: var(--accent-primary);
+            text-transform: uppercase; font-weight: 900;
+        }
+
+        .shop-bar { 
+            display: flex; overflow-x: auto; padding: 10px 5% 30px; gap: 20px; 
+            scrollbar-width: none; 
+        }
+        .shop-bar::-webkit-scrollbar { display: none; }
+        
+        .shop-item { flex: 0 0 auto; text-align: center; width: 80px; cursor: pointer; transition: 0.3s; }
+        .shop-item:hover { transform: translateY(-5px); }
+        
+        .shop-circle { 
+            width: 70px; height: 70px; border-radius: 50%; 
+            background: var(--surface); border: 1px solid var(--glass-border);
+            color: #fff; display: flex; align-items: center; justify-content: center; 
+            font-family: 'Syne', sans-serif; font-weight: 800; margin-bottom: 8px; font-size: 1.5rem;
+            transition: 0.3s;
+        }
+        .shop-item:hover .shop-circle { border-color: var(--accent-primary); box-shadow: 0 0 20px rgba(255, 62, 0, 0.2); }
+
+        .product-grid { 
+            display: grid; 
+            grid-template-columns: repeat(2, 1fr); 
+            gap: 20px; 
+            padding: 0 5% 50px; 
+        }
+        .product-card { 
+            background: var(--surface);
+            border: 1px solid var(--glass-border); 
+            overflow: hidden; 
+            transition: 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            cursor: pointer;
+        }
+        .product-card:hover { border-color: #fff; transform: translateY(-8px); }
+        
+        .p-img { 
+            height: 180px; background: #1a1a1a; position: relative; 
+            background-size: cover; background-position: center;
+        }
+        .visit-tag { 
+            position: absolute; top: 12px; right: 12px; background: var(--accent-primary); 
+            color: white; font-size: 0.6rem; padding: 4px 10px; font-weight: 900; text-transform: uppercase;
+        }
+        
+        .p-info { padding: 20px; }
+        .p-info small { color: var(--text-low); font-size: 0.65rem; text-transform: uppercase; letter-spacing: 2px; }
+        .p-info h3 { font-family: 'Syne', sans-serif; font-size: 1.1rem; margin: 8px 0; color: #fff; }
+        .p-info p { font-size: 1.2rem; font-weight: 900; color: #fff; }
+
+        /* --- PROFILE VIEW --- */
+        .profile-hero { 
+            padding: 60px 5%; border-bottom: 1px solid var(--glass-border); 
+            background: linear-gradient(180deg, var(--surface) 0%, transparent 100%);
+        }
+        .profile-hero h2 { font-family: 'Syne', sans-serif; font-size: 3rem; letter-spacing: -2px; }
+
+        .order-card { 
+            background: #fff; color: #000; margin: 20px 5%; 
+            padding: 30px; position: relative; 
+        }
+        .short-id-box { 
+            display: inline-block; background: #000; color: #fff; 
+            padding: 8px 16px; font-weight: 900; 
+            margin-top: 20px; font-family: monospace; font-size: 1.2rem; 
+        }
+        .status-pill { 
+            position: absolute; top: 30px; right: 30px; font-size: 0.7rem; 
+            font-weight: 900; text-transform: uppercase; border: 1px solid #000; 
+            padding: 5px 12px; 
+        }
+
+        /* --- BOTTOM NAV --- */
+        .bottom-nav { 
+            position: fixed; bottom: 0; width: 100%; height: 80px; 
+            background: rgba(10, 10, 10, 0.9); border-top: 1px solid var(--glass-border); 
+            display: flex; justify-content: space-around; align-items: center; 
+            z-index: 2000; backdrop-filter: blur(20px);
+        }
+        .nav-tab { 
+            background: none; border: none; font-weight: 900; font-size: 0.7rem; 
+            color: var(--text-low); cursor: pointer; text-transform: uppercase; letter-spacing: 2px;
+            padding: 15px; transition: 0.4s; position: relative;
+        }
+        .nav-tab.active { color: var(--text-high); }
+        .nav-tab.active::after {
+            content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+            width: 20px; height: 2px; background: var(--accent-primary);
+        }
+
+        .btn-logout {
+            margin: 40px 5%; width: 90%; padding: 20px; 
+            background: transparent; border: 1px solid #ff0000; color: #ff0000;
+            font-weight: 900; text-transform: uppercase; cursor: pointer;
+            transition: 0.3s;
+        }
+        .btn-logout:hover { background: #ff0000; color: #fff; }
+
+        @media (max-width: 600px) {
+            .product-grid { grid-template-columns: 1fr; }
+            .p-img { height: 250px; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1 id="view-title">DISCOVERY.</h1>
+        {% if user %}
+            <small style="font-weight: 900; color: var(--accent-secondary);">TERMINAL: {{ user.name.split(' ')[0]|upper }}</small>
+        {% endif %}
+    </header>
+
+    <!-- DISCOVERY VIEW -->
+    <div id="feed-view" class="view-section active">
+        <div class="section-label">Verified Merchants</div>
+        <div class="shop-bar">
+            {% if shops %}
+                {% for shop in shops %}
+                <div class="shop-item" onclick="location.href='/shop/{{ shop.shop_slug }}'">
+                    <div class="shop-circle">{{ shop.shop_name[0]|upper }}</div>
+                    <span style="font-size: 0.6rem; font-weight: 900; text-transform: uppercase;">{{ shop.shop_name }}</span>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="shop-item">
+                    <div class="shop-circle">S</div>
+                    <span style="font-size: 0.6rem; font-weight: 900; text-transform: uppercase;">SILICON</span>
+                </div>
+                <div class="shop-item">
+                    <div class="shop-circle">V</div>
+                    <span style="font-size: 0.6rem; font-weight: 900; text-transform: uppercase;">VOID</span>
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="section-label">Available Inventory</div>
+        <div class="product-grid">
+            {% if products %}
+                {% for p in products %}
+                <div class="product-card" onclick="location.href='/product/{{ p.id }}'">
+                    <div class="p-img" style="background-image: url('https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&q=80&w=800')">
+                        {% if p.visit_count > 10 %}
+                            <span class="visit-tag">Trending</span>
+                        {% endif %}
+                    </div>
+                    <div class="p-info">
+                        <small>{{ p.shop_name }}</small>
+                        <h3>{{ p.name }}</h3>
+                        <p>₦{{ p.display_price }}</p>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <!-- Mock Cards -->
+                <div class="product-card">
+                    <div class="p-img" style="background-image: url('https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&q=80&w=800')">
+                        <span class="visit-tag">High Demand</span>
+                    </div>
+                    <div class="p-info">
+                        <small>Sole Source</small>
+                        <h3>Velocity Runner X1</h3>
+                        <p>₦45,000</p>
+                    </div>
+                </div>
+                <div class="product-card">
+                    <div class="p-img" style="background-image: url('https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&q=80&w=800')"></div>
+                    <div class="p-info">
+                        <small>Acoustics Lab</small>
+                        <h3>Studio Monitor V2</h3>
+                        <p>₦120,000</p>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- PROFILE VIEW -->
+    <div id="profile-view" class="view-section">
+        {% if user %}
+            <div class="profile-hero">
+                <span class="section-label" style="padding:0; margin-bottom: 10px; display: block;">Identified User</span>
+                <h2>{{ user.name|upper }}</h2>
+                <p style="color: var(--text-low);">{{ user.whatsapp_number }}</p>
+            </div>
+            
+            <div class="section-label">Subscribed Merchants</div>
+            <div class="shop-bar">
+                {% for sub in subs %}
+                <div class="shop-item" onclick="location.href='/shop/{{ sub.shop_slug }}'">
+                    <div class="shop-circle" style="background: var(--accent-secondary); width: 60px; height: 60px; border: none;">{{ sub.shop_name[0] }}</div>
+                    <span style="font-size: 0.6rem; font-weight: 900;">{{ sub.shop_name }}</span>
+                </div>
+                {% else %}
+                    <p style="padding: 0 5%; font-size: 0.8rem; color: var(--text-low);">No active subscriptions found in registry.</p>
+                {% endfor %}
+            </div>
+
+            <div class="section-label">Logistics Tracking</div>
+            {% for order in orders %}
+            <div class="order-card">
+                <span class="status-pill">{{ order.status }}</span>
+                <h3 style="font-family: 'Syne';">{{ order.product_name }}</h3>
+                <small>Source: {{ order.shop_name }} • ₦{{ order.display_price }}</small><br>
+                <div class="short-id-box">{{ order.short_id }}</div>
+            </div>
+            {% else %}
+            <div style="padding: 60px 5%; text-align: center; color: var(--text-low);">
+                <p>No active logistics sequences recorded.</p>
+            </div>
+            {% endfor %}
+
+            <button onclick="location.href='/logout'" class="btn-logout">Deauthorize Terminal</button>
+        {% else %}
+            <div style="padding: 120px 10%; text-align: center;">
+                <h2 style="font-family: 'Syne'; font-size: 3rem; margin-bottom: 20px;">ACCESS DENIED.</h2>
+                <p style="color: var(--text-low); margin-bottom: 40px;">Authentication required to view private data and track logistics.</p>
+                <button onclick="location.href='/login/customer'" style="width: 100%; padding: 25px; background: #fff; color: #000; border: none; font-weight: 900; font-size: 1rem; cursor: pointer; text-transform: uppercase;">Login to Terminal</button>
+            </div>
+        {% endif %}
+    </div>
+
+    <nav class="bottom-nav">
+        <button id="btn-feed" class="nav-tab active" onclick="switchView('feed')">Discovery</button>
+        <button id="btn-profile" class="nav-tab" onclick="switchView('profile')">Profile</button>
+    </nav>
+
+    <script>
+        function switchView(view) {
+            document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
+            document.getElementById(view + '-view').classList.add('active');
+
+            document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+            document.getElementById('btn-' + view).classList.add('active');
+
+            const title = document.getElementById('view-title');
+            if (view === 'feed') {
+                title.innerText = 'DISCOVERY.';
+            } else {
+                title.innerText = 'OPERATIONS.';
+            }
+            
+            window.scrollTo({top: 0, behavior: 'smooth'});
+        }
+    </script>
+
+</body>
+</html>

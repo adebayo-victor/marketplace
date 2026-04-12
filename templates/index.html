@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Marketplace // The Professional Craft Sanctuary</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;600&display=swap');
+
+        :root {
+            --clay: #8d5b3e; 
+            --cream: #f9f5f0; 
+            --dark-oak: #2d1e14;
+            --sand-glass: rgba(249, 245, 240, 0.95);
+            --icon-tint: rgba(141, 91, 62, 0.12); 
+        }
+
+        body {
+            margin: 0;
+            background: var(--cream);
+            color: var(--dark-oak);
+            font-family: 'Georgia', serif;
+            overflow-x: hidden;
+        }
+
+        /* Obvious Logo Placement */
+        .nav-header {
+            position: absolute;
+            top: 40px;
+            left: 8%;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .main-logo {
+            width: 50px;
+            height: 50px;
+            fill: var(--dark-oak);
+            background: var(--cream);
+            padding: 10px;
+            border-radius: 50%;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .brand-name {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 600;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            font-size: 1.2rem;
+        }
+
+        /* Hero: Professional Profession Slider (Pexels Sources) */
+        .hero {
+            position: relative;
+            height: 90vh;
+            display: flex;
+            align-items: center;
+            padding: 0 8%;
+            border-bottom: 6px solid var(--clay);
+        }
+
+        .sync-layer {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-size: cover;
+            background-position: center;
+            z-index: -2;
+            animation: syncShift 12s infinite; /* Slowed down to 4s per profession */
+        }
+
+        @keyframes syncShift {
+            /* Ceramicist/Potter */
+            0%, 32% { background-image: url('https://images.pexels.com/photos/4006731/pexels-photo-4006731.jpeg?auto=compress&cs=tinysrgb&w=2000'); }
+            /* Tailor/Weaver */
+            33%, 65% { background-image: url('https://images.pexels.com/photos/4614214/pexels-photo-4614214.jpeg?auto=compress&cs=tinysrgb&w=2000'); }
+            /* Architect/Planner */
+            66%, 100% { background-image: url('https://images.pexels.com/photos/3183186/pexels-photo-3183186.jpeg?auto=compress&cs=tinysrgb&w=2000'); }
+        }
+
+        .craft-icon {
+            position: absolute;
+            left: 10%;
+            top: 25%;
+            width: 450px;
+            height: 450px;
+            fill: var(--icon-tint);
+            z-index: -1;
+            opacity: 0;
+        }
+
+        .craft-icon.v-vase { animation: iconFade 12s steps(1) infinite; }
+        .craft-icon.v-loom { animation: iconFade 12s steps(1) 4s infinite; }
+        .craft-icon.v-ruler { animation: iconFade 12s steps(1) 8s infinite; }
+
+        @keyframes iconFade {
+            0% { opacity: 1; }
+            33.33% { opacity: 0; }
+        }
+
+        .hero-overlay {
+            background: var(--sand-glass);
+            padding: 60px;
+            border-radius: 2px;
+            max-width: 480px;
+            box-shadow: 20px 20px 0px var(--clay); /* Sharp executive shadow */
+            z-index: 2;
+        }
+
+        .hero-overlay h1 {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 3.8rem;
+            text-transform: lowercase;
+            margin: 0;
+            font-weight: 600;
+            letter-spacing: -3px;
+            line-height: 0.9;
+        }
+
+        .market-metrics {
+            display: flex;
+            gap: 30px;
+            margin-top: 30px;
+            border-top: 1px solid rgba(0,0,0,0.1);
+            padding-top: 25px;
+        }
+
+        .metric-box svg {
+            width: 28px;
+            height: 28px;
+            fill: var(--clay);
+        }
+
+        .market-floor { padding: 80px 8%; }
+        .kiosk-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 40px;
+            margin-top: 50px;
+        }
+
+        .kiosk-card {
+            background: white;
+            text-decoration: none;
+            color: inherit;
+            border-bottom: 3px solid transparent;
+            transition: 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+        }
+        .kiosk-card:hover { 
+            transform: translateY(-8px); 
+            border-bottom-color: var(--clay);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.05); 
+        }
+
+        .btn-kiosk {
+            display: inline-block;
+            margin-top: 40px;
+            padding: 18px 50px;
+            background: var(--dark-oak);
+            color: white;
+            text-decoration: none;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+    </style>
+</head>
+<body>
+
+    <header class="nav-header">
+        <svg class="main-logo" viewBox="0 0 24 24"><path d="M12,3L4,9V21H20V9L12,3M12,5.19L18,9.69V19H13V15H11V19H6V9.69L12,5.19Z"/></svg>
+        <span class="brand-name">Marketplace</span>
+    </header>
+
+    <section class="hero">
+        <div class="sync-layer"></div>
+        
+        <svg class="craft-icon v-vase" viewBox="0 0 24 24"><path d="M15.5,12C18,12 20,14 20,16.5C20,19 18,21 15.5,21C13,21 11,19 11,16.5C11,14 13,12 15.5,12M15.5,14C14.12,14 13,15.12 13,16.5C13,17.88 14.12,19 15.5,19C16.88,19 18,17.88 18,16.5C18,15.12 16.88,14 15.5,14M10,21H3V3H21V10.35C20.37,10.12 19.7,10 19,10V5H5V19H10V21Z"/></svg>
+        <svg class="craft-icon v-loom" viewBox="0 0 24 24"><path d="M17,14V17H14V19H17V22H19V19H22V17H19V14H17M12,19L8,23H4L8,19L4,15H8L12,19M12,5L8,1H4L8,5L4,9H8L12,5M19,2L15,6H11L15,2H19M19,10L15,6V10H11L15,14L19,10Z"/></svg>
+        <svg class="craft-icon v-ruler" viewBox="0 0 24 24"><path d="M2,21L21,2H2V21M5,15.5V18.5L8,15.5H5M11,15.5V18.5L14,15.5H11M17,15.5V18.5L18.5,17L17,15.5M5,9.5V12.5L8,9.5H5M11,9.5V12.5L14,9.5H11M5,3.5V6.5L6.5,5L5,3.5Z"/></svg>
+
+        <div class="hero-overlay">
+            <span style="font-family: 'Montserrat', sans-serif; font-size: 0.7rem; letter-spacing: 5px; color: var(--clay);">01 // THE COLLECTIVE</span>
+            <h1>market<br>place.</h1>
+            <p style="font-style: italic; margin-top: 20px;">Curated infrastructure for the modern guild.</p>
+            
+            <div class="market-metrics">
+                <div class="metric-box" style="display:flex; align-items:center; gap:12px;">
+                    <svg viewBox="0 0 24 24"><path d="M16,6V4H8V6H2V8H4V20H20V8H22V6H16M10,4H14V6H10V4M18,18H6V8H18V18Z"/></svg>
+                    <div class="metric-text">
+                        <span>Live Kiosks</span>
+                        <strong>{{ stats.active_kiosks }}</strong>
+                    </div>
+                </div>
+                <div class="metric-box" style="display:flex; align-items:center; gap:12px;">
+                    <svg viewBox="0 0 24 24"><path d="M15,12H13V19H11V12H9L12,9L15,12M15,10V7H13V2H11V7H9L12,10L15,10Z"/></svg>
+                    <div class="metric-text">
+                        <span>Trades</span>
+                        <strong>{{ stats.conversations }}</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="market-floor">
+        <div style="display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid var(--clay); padding-bottom: 10px;">
+            <h2 style="font-family: 'Montserrat', sans-serif; margin: 0; text-transform: uppercase; letter-spacing: 2px;">The Floor</h2>
+            <span style="font-size: 0.8rem; color: var(--clay);">EXPLORE INDEPENDENT STALLS</span>
+        </div>
+        
+        <div class="kiosk-grid">
+            {% for merchant in merchants %}
+            <a href="/{{ merchant.slug }}" class="kiosk-card">
+                <div style="overflow:hidden; height: 220px;">
+                    <img src="https://images.pexels.com/photos/1029604/pexels-photo-1029604.jpeg?auto=compress&cs=tinysrgb&w=800" style="width:100%; height:100%; object-fit:cover; filter: grayscale(30%);">
+                </div>
+                <div style="padding:25px; background: white;">
+                    <h3 style="margin:0; font-family: 'Montserrat', sans-serif;">{{ merchant.name }}</h3>
+                    <p style="font-size: 0.75rem; color: var(--clay); margin-top: 10px; letter-spacing: 1px;">OPEN FOR TRADE &rarr;</p>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+
+        <div style="text-align: center;">
+            <a href="/register" class="btn-kiosk">REGISTER AS A MERCHANT</a>
+        </div>
+        <div style="text-align: center;">
+            <a href="/login" class="btn-kiosk">CHECK OUT YOUR KIOSK(S)</a>
+        </div>
+    </section>
+
+    <footer style="padding: 60px; text-align: center; font-family: 'Montserrat', sans-serif; font-size: 0.65rem; color: #aaa; letter-spacing: 3px;">
+        MARKETPLACE &copy; 2026 / AN ARTISAN ARCHITECTURE
+    </footer>
+
+</body>
+</html>

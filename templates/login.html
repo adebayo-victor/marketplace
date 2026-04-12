@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Merchant Login // Marketplace</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;600&display=swap');
+        :root { --clay: #8d5b3e; --cream: #f9f5f0; --dark-oak: #2d1e14; }
+
+        body {
+            background: var(--cream);
+            color: var(--dark-oak);
+            font-family: 'Georgia', serif;
+            display: flex; justify-content: center; align-items: center;
+            height: 100vh; margin: 0;
+        }
+
+        .auth-container {
+            background: white; padding: 60px; width: 100%; max-width: 400px;
+            border-top: 8px solid var(--dark-oak);
+            box-shadow: 0 30px 60px rgba(0,0,0,0.05);
+        }
+
+        h2 { font-family: 'Montserrat', sans-serif; text-transform: lowercase; font-size: 2rem; margin-bottom: 30px; }
+
+        .form-group { margin-bottom: 25px; }
+        label { display: block; font-family: 'Montserrat'; font-size: 0.7rem; text-transform: uppercase; color: var(--clay); letter-spacing: 2px; margin-bottom: 8px; }
+
+        input {
+            width: 100%; padding: 15px 0; border: none; border-bottom: 1px solid #ddd;
+            font-family: 'Georgia'; font-size: 1.1rem; outline: none; transition: 0.3s;
+        }
+
+        input:focus { border-bottom-color: var(--clay); }
+
+        .btn-submit {
+            margin-top: 20px; width: 100%; padding: 20px; background: var(--dark-oak);
+            color: white; border: none; font-family: 'Montserrat'; font-weight: 600; cursor: pointer;
+        }
+
+        .error-msg { color: #d9534f; font-size: 0.8rem; margin-bottom: 20px; font-style: italic; }
+    </style>
+</head>
+<body>
+
+    <div class="auth-container">
+        <h2>Merchant Login.</h2>
+        
+        {% if error %}
+            <p class="error-msg">{{ error }}</p>
+        {% endif %}
+
+        <form action="/login" method="POST">
+            <div class="form-group">
+                <label>Merchant Name</label>
+                <input type="text" name="merchant_name" placeholder="Enter your brand name" required>
+            </div>
+
+            <div class="form-group">
+                <label>Secret Key</label>
+                <input type="password" name="password" required>
+            </div>
+
+            <button type="submit" class="btn-submit">ACCESS DASHBOARD</button>
+        </form>
+        
+        <p style="text-align: center; margin-top: 30px; font-size: 0.8rem;">
+            New here? <a href="/register" style="color: var(--clay); text-decoration: none;">Enroll as a Merchant</a>
+        </p>
+    </div>
+
+</body>
+</html>

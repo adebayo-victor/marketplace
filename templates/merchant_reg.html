@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sell on Marketplace | Merchant</title>
+    <style>
+        :root { --accent: #000000; --bg: #ffffff; --gray: #f4f4f4; }
+        body { font-family: 'Helvetica Neue', sans-serif; background: var(--gray); display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        
+        .merchant-box { width: 90%; max-width: 450px; background: white; padding: 40px; border-radius: 4px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
+        h2 { font-size: 2.2rem; letter-spacing: -1.5px; margin-bottom: 10px; }
+        p { color: #666; font-size: 0.9rem; margin-bottom: 30px; }
+        
+        .form-group { margin-bottom: 20px; }
+        label { display: block; font-size: 0.75rem; text-transform: uppercase; font-weight: bold; margin-bottom: 8px; color: #444; }
+        
+        input { 
+            width: 100%; 
+            padding: 14px; 
+            border: 1px solid #ddd; 
+            border-radius: 4px; 
+            box-sizing: border-box; 
+            font-size: 1rem;
+            background: #fff;
+        }
+        
+        input:focus { border-color: var(--accent); outline: none; }
+
+        .btn-black { 
+            width: 100%; 
+            padding: 16px; 
+            background: var(--accent); 
+            color: white; 
+            border: none; 
+            border-radius: 4px; 
+            font-weight: bold; 
+            cursor: pointer; 
+            margin-top: 20px;
+            font-size: 1rem;
+        }
+        
+        .btn-black:hover { opacity: 0.9; }
+        .footer-note { text-align: center; margin-top: 25px; font-size: 0.85rem; color: #888; }
+        .footer-note a { color: black; text-decoration: none; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div class="merchant-box">
+        <h2>Start Selling.</h2>
+        <p>Join the campus trade network. Setup your merchant identity to begin.</p>
+        
+        <form action="/register/merchant" method="POST">
+            <div class="form-group">
+                <label>Legal Name / Representative</label>
+                <input type="text" name="name" placeholder="Victor Adebayo" required>
+            </div>
+            
+            <div class="form-group">
+                <label>Business WhatsApp</label>
+                <input type="tel" name="whatsapp" placeholder="080XXXXXXXX" required>
+            </div>
+            
+            <div class="form-group">
+                <label>Email Address</label>
+                <input type="email" name="email" placeholder="biz@example.com" required>
+            </div>
+
+            <div class="form-group">
+                <label>Create Dashboard Password</label>
+                <input type="password" name="password" placeholder="••••••••" required>
+            </div>
+
+            <button type="submit" class="btn-black">Apply as Merchant</button>
+        </form>
+
+        <div class="footer-note">
+            Already a merchant? <a href="/login/merchant">Sign In</a>
+        </div>
+    </div>
+
+</body>
+</html>

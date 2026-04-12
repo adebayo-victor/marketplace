@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Name Reserved // Marketplace</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;600&display=swap');
+        
+        :root {
+            --clay: #8d5b3e; 
+            --cream: #f9f5f0; 
+            --dark-oak: #2d1e14;
+        }
+
+        body {
+            background: var(--cream);
+            color: var(--dark-oak);
+            font-family: 'Georgia', serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            text-align: center;
+        }
+
+        .notice-container {
+            background: white;
+            padding: 60px;
+            max-width: 500px;
+            border: 1px solid #eee;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.05);
+        }
+
+        .icon-box {
+            width: 60px;
+            height: 60px;
+            background: var(--cream);
+            fill: var(--clay);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            margin: 0 auto 30px;
+        }
+
+        h2 {
+            font-family: 'Montserrat', sans-serif;
+            text-transform: lowercase;
+            font-size: 2rem;
+            margin-bottom: 20px;
+            letter-spacing: -1px;
+        }
+
+        p {
+            line-height: 1.6;
+            color: #666;
+            margin-bottom: 40px;
+        }
+
+        .btn-retry {
+            display: inline-block;
+            padding: 15px 40px;
+            background: var(--dark-oak);
+            color: white;
+            text-decoration: none;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 600;
+            letter-spacing: 1px;
+            font-size: 0.8rem;
+            transition: opacity 0.3s;
+        }
+
+        .btn-retry:hover {
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="notice-container">
+        <div class="icon-box">
+            <svg width="30" height="30" viewBox="0 0 24 24">
+                <path d="M12,2L1,21H23L12,2M12,6L19.53,19H4.47L12,6M11,10V14H13V10H11M11,16V18H13V16H11Z"/>
+            </svg>
+        </div>
+        
+        <h2>this space is occupied.</h2>
+        <p>The kiosk name you’ve chosen is already established within the Marketplace. In our professional collective, every identity must be unique.</p>
+        
+        <a href="/register" class="btn-retry">CHOOSE ANOTHER NAME</a>
+        <br>
+        <a href="/" style="display: block; margin-top: 20px; font-size: 0.7rem; color: #aaa; text-decoration: none; letter-spacing: 2px; text-transform: uppercase;">Back to Floor</a>
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Architecture // Marketplace</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600&display=swap');
+        
+        :root { 
+            --clay: #8d5b3e; 
+            --dark: #2d1e14; 
+            --bg: #f9f5f0; 
+            --white: #ffffff;
+        }
+        
+        body { 
+            background: var(--bg); 
+            font-family: 'Georgia', serif; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 100vh; 
+            margin: 0; 
+            padding: 40px 20px; 
+        }
+        
+        .form-card { 
+            background: var(--white); 
+            padding: 60px; 
+            width: 100%; 
+            max-width: 700px; 
+            box-shadow: 0 30px 60px rgba(0,0,0,0.05); 
+            border-top: 8px solid var(--clay); 
+        }
+        
+        .step-label { 
+            font-family: 'Montserrat'; 
+            font-size: 0.65rem; 
+            text-transform: uppercase; 
+            color: #aaa; 
+            letter-spacing: 3px; 
+            display: block;
+            margin-bottom: 15px;
+        }
+
+        h2 { 
+            font-family: 'Montserrat'; 
+            text-transform: lowercase; 
+            font-size: 2.5rem; 
+            margin: 0 0 10px 0; 
+            letter-spacing: -1px; 
+        }
+
+        .jovial-warning {
+            font-size: 0.9rem;
+            line-height: 1.6;
+            color: var(--dark);
+            margin-bottom: 40px;
+            padding: 25px;
+            background: #fffcf5;
+            border-radius: 4px;
+            border: 1px solid #e0d5c5;
+        }
+
+        .jovial-warning strong { color: var(--clay); }
+        
+        .field { margin-bottom: 45px; }
+        
+        label.main-label { 
+            display: block; 
+            font-family: 'Montserrat'; 
+            font-size: 0.75rem; 
+            font-weight: 600; 
+            margin-bottom: 15px; 
+            color: var(--dark); 
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        input[type="text"], textarea { 
+            width: 100%; 
+            padding: 15px 0; 
+            border: none; 
+            border-bottom: 2px solid #eee; 
+            font-family: 'Georgia'; 
+            font-size: 1.2rem; 
+            outline: none; 
+            background: transparent; 
+            transition: 0.3s; 
+        }
+
+        input:focus, textarea:focus { border-bottom-color: var(--clay); }
+        
+        textarea { height: 60px; resize: none; line-height: 1.6; }
+        
+        .vibe-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-top: 15px;
+        }
+
+        .vibe-chip {
+            padding: 15px;
+            border: 1px solid #eee;
+            background: #fafafa;
+            cursor: pointer;
+            font-family: 'Montserrat';
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-align: center;
+            transition: 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .vibe-chip:hover { border-color: var(--clay); color: var(--clay); }
+        .vibe-chip.selected { background: var(--clay); color: white; border-color: var(--clay); }
+
+        .module-group { margin-bottom: 20px; }
+
+        .module-item {
+            display: flex;
+            align-items: center;
+            padding: 20px;
+            background: #fdfdfd;
+            border: 1px solid #f0f0f0;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .module-item:hover { background: #fff; border-color: #ddd; }
+        .module-item input { margin-right: 20px; accent-color: var(--clay); transform: scale(1.3); }
+        
+        .module-info { flex: 1; }
+        .module-title { display: block; font-family: 'Montserrat'; font-size: 0.85rem; font-weight: 600; }
+        .module-desc { font-size: 0.75rem; color: #999; }
+
+        .extra-detail {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease-out, padding 0.3s ease;
+            background: #fff;
+            border: 1px solid #f0f0f0;
+            border-top: none;
+            padding: 0 20px;
+        }
+
+        .module-group input[type="checkbox"]:checked ~ .extra-detail {
+            max-height: 200px;
+            padding: 20px;
+        }
+
+        .btn-initialize { 
+            width: 100%; 
+            padding: 25px; 
+            background: var(--dark); 
+            color: white; 
+            border: none; 
+            font-family: 'Montserrat'; 
+            font-weight: 600; 
+            cursor: pointer; 
+            margin-top: 20px; 
+            letter-spacing: 2px; 
+            transition: 0.3s; 
+            text-transform: uppercase;
+            position: relative;
+        }
+
+        .btn-initialize:hover:not(:disabled) { background: var(--clay); transform: translateY(-2px); }
+
+        /* Animation when button is clicked */
+        .btn-initialize:disabled {
+            background: #555;
+            cursor: not-allowed;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="form-card">
+        <span class="step-label">Phase 01 // Configuration</span>
+        <h2>Construct Kiosk.</h2>
+
+        <div class="jovial-warning">
+            🇳🇬 <strong>Abeg, use your head!</strong> Your input is the cement and blocks for this shop. <strong>Choose your words carefully.</strong>
+        </div>
+        
+        <form id="archForm" action="/kiosk/new" method="POST">
+            <div class="field">
+                <label class="main-label">Kiosk Name</label>
+                <input type="text" name="kiosk_name" placeholder="The Brass Thimble" required>
+            </div>
+
+            <div class="field">
+                <label class="main-label">Visual Presets</label>
+                <div class="vibe-grid">
+                    <div class="vibe-chip" onclick="setVibe(this, 'Luxury: Gold and Deep Emerald tones, high-end jewelry feel, elegant serif fonts.')">✨ Luxury</div>
+                    <div class="vibe-chip" onclick="setVibe(this, 'Streetwear: Gritty, bold Helvetica, neon accents on black, urban energy.')">🛹 Street</div>
+                    <div class="vibe-chip" onclick="setVibe(this, 'Organic: Earthy browns and greens, soft edges, handmade natural lighting.')">🌿 Organic</div>
+                    <div class="vibe-chip" onclick="setVibe(this, 'Tech: Dark mode, blue glowing borders, sleek futuristic icons.')">💻 Cyber</div>
+                </div>
+            </div>
+
+            <div class="field">
+                <label class="main-label">The Vibe (Refine AI Prompt)</label>
+                <textarea id="vibe-input" name="vibe" placeholder="Describe the atmosphere..." required></textarea>
+            </div>
+
+            <div class="field">
+                <label class="main-label">Architecture Modules</label>
+                
+                <div class="module-group">
+                    <label class="module-item">
+                        <input type="checkbox" name="module_hero">
+                        <div class="module-info">
+                            <span class="module-title">Hero Banner</span>
+                            <span class="module-desc">A big welcome message at the top.</span>
+                        </div>
+                    </label>
+                    <div class="extra-detail">
+                        <input type="text" name="hero_text" placeholder="e.g. 'Handcrafted Leather for the Bold'">
+                    </div>
+                </div>
+
+                <div class="module-group">
+                    <label class="module-item">
+                        <input type="checkbox" name="module_faq">
+                        <div class="module-info">
+                            <span class="module-title">FAQ Section</span>
+                            <span class="module-desc">Answer common questions.</span>
+                        </div>
+                    </label>
+                    <div class="extra-detail">
+                        <input type="text" name="faq_focus" placeholder="e.g. 'Focus on shipping times'">
+                    </div>
+                </div>
+
+                <div class="module-group">
+                    <label class="module-item">
+                        <input type="checkbox" name="module_reviews">
+                        <div class="module-info">
+                            <span class="module-title">Testimonials</span>
+                            <span class="module-desc">Add customer social proof.</span>
+                        </div>
+                    </label>
+                    <div class="extra-detail">
+                        <input type="text" name="review_style" placeholder="e.g. 'Energetic reviews from customers'">
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" id="submitBtn" class="btn-initialize">BEGIN ARCHITECTURE</button>
+        </form>
+    </div>
+
+    <script>
+        function setVibe(el, text) {
+            document.querySelectorAll('.vibe-chip').forEach(chip => chip.classList.remove('selected'));
+            el.classList.add('selected');
+            document.getElementById('vibe-input').value = text;
+        }
+
+        // Handle button state and unclickability
+        document.getElementById('archForm').addEventListener('submit', function() {
+            const btn = document.getElementById('submitBtn');
+            btn.disabled = true;
+            btn.innerText = "CONSTRUCTING SITE... PLEASE WAIT";
+        });
+    </script>
+
+</body>
+</html>
