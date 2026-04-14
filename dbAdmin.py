@@ -7,7 +7,7 @@ load_dotenv()
 # Connect to your Postgres Cloud DB
 db = SQL(os.environ.get("DATABASE_URL"))
 
-# 1. Merchants Table
+'''# 1. Merchants Table
 db.execute("""
     CREATE TABLE IF NOT EXISTS merchants (
         id SERIAL PRIMARY KEY,
@@ -91,7 +91,7 @@ db.execute("""
     )
 """)
 
-print("Cloud Database checked/initialized successfully. ✅")
+print("Cloud Database checked/initialized successfully. ✅")'''
 
 # --- SEEDER SECTION ---
 
@@ -154,3 +154,6 @@ print("Cloud Database checked/initialized successfully. ✅")
 
 if __name__ == "__main__":
     seed()'''
+
+print(db.execute("UPDATE kiosks SET is_active = 1 WHERE kiosk_name = 'Otaku fashion corner '"))
+print(db.execute("SELECT kiosk_name, is_active FROM kiosks"))

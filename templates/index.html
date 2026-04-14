@@ -52,7 +52,7 @@
             font-size: 1.2rem;
         }
 
-        /* Hero: Professional Profession Slider (Pexels Sources) */
+        /* Hero: Aerial Video Background */
         .hero {
             position: relative;
             height: 90vh;
@@ -60,24 +60,18 @@
             align-items: center;
             padding: 0 8%;
             border-bottom: 6px solid var(--clay);
+            overflow: hidden; /* Ensures video stays inside */
         }
 
-        .sync-layer {
+        #hero-video {
             position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background-size: cover;
-            background-position: center;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
             z-index: -2;
-            animation: syncShift 12s infinite; /* Slowed down to 4s per profession */
-        }
-
-        @keyframes syncShift {
-            /* Ceramicist/Potter */
-            0%, 32% { background-image: url('https://images.pexels.com/photos/4006731/pexels-photo-4006731.jpeg?auto=compress&cs=tinysrgb&w=2000'); }
-            /* Tailor/Weaver */
-            33%, 65% { background-image: url('https://images.pexels.com/photos/4614214/pexels-photo-4614214.jpeg?auto=compress&cs=tinysrgb&w=2000'); }
-            /* Architect/Planner */
-            66%, 100% { background-image: url('https://images.pexels.com/photos/3183186/pexels-photo-3183186.jpeg?auto=compress&cs=tinysrgb&w=2000'); }
+            filter: brightness(0.85) contrast(1.1); /* Slightly darkened for text readability */
         }
 
         .craft-icon {
@@ -105,7 +99,7 @@
             padding: 60px;
             border-radius: 2px;
             max-width: 480px;
-            box-shadow: 20px 20px 0px var(--clay); /* Sharp executive shadow */
+            box-shadow: 20px 20px 0px var(--clay); 
             z-index: 2;
         }
 
@@ -164,7 +158,9 @@
             font-family: 'Montserrat', sans-serif;
             font-weight: 600;
             letter-spacing: 1px;
+            transition: 0.3s;
         }
+        .btn-kiosk:hover { background: var(--clay); }
     </style>
 </head>
 <body>
@@ -175,7 +171,10 @@
     </header>
 
     <section class="hero">
-        <div class="sync-layer"></div>
+        <video autoplay muted loop playsinline id="hero-video">
+            <source src="https://videos.pexels.com/video-files/4320290/4320290-uhd_2560_1440_25fps.mp4" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
         
         <svg class="craft-icon v-vase" viewBox="0 0 24 24"><path d="M15.5,12C18,12 20,14 20,16.5C20,19 18,21 15.5,21C13,21 11,19 11,16.5C11,14 13,12 15.5,12M15.5,14C14.12,14 13,15.12 13,16.5C13,17.88 14.12,19 15.5,19C16.88,19 18,17.88 18,16.5C18,15.12 16.88,14 15.5,14M10,21H3V3H21V10.35C20.37,10.12 19.7,10 19,10V5H5V19H10V21Z"/></svg>
         <svg class="craft-icon v-loom" viewBox="0 0 24 24"><path d="M17,14V17H14V19H17V22H19V19H22V17H19V14H17M12,19L8,23H4L8,19L4,15H8L12,19M12,5L8,1H4L8,5L4,9H8L12,5M19,2L15,6H11L15,2H19M19,10L15,6V10H11L15,14L19,10Z"/></svg>
@@ -225,11 +224,9 @@
             {% endfor %}
         </div>
 
-        <div style="text-align: center;">
+        <div style="text-align: center; margin-top: 40px; display: flex; justify-content: center; gap: 20px;">
             <a href="/register" class="btn-kiosk">REGISTER AS A MERCHANT</a>
-        </div>
-        <div style="text-align: center;">
-            <a href="/login" class="btn-kiosk">CHECK OUT YOUR KIOSK(S)</a>
+            <a href="/login" class="btn-kiosk" style="background: transparent; color: var(--dark-oak); border: 1px solid var(--dark-oak);">KIOSK LOGIN</a>
         </div>
     </section>
 

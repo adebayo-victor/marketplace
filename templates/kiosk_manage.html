@@ -87,7 +87,7 @@
                     {% for p in products %}
                     <tr>
                         <td><strong>{{ p.name }}</strong></td>
-                        <td>${{ "{:,.2f}".format(p.price) }}</td>
+                        <td>₦{{ "{:,.2f}".format(p.price) }}</td>
                         <td>{{ p.stock }} units</td>
                         <td>
                             <a href="/{{ kiosk.slug }}/product/edit/{{ p.id }}" 
