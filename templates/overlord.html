@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Overlord // Master Explorer</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;600&display=swap');
+        :root { --clay: #8d5b3e; --dark: #0a0a0a; --surface: #151515; --cream: #f9f5f0; --green: #2ecc71; --red: #e74c3c; }
+        
+        body { margin: 0; background: var(--dark); color: var(--cream); font-family: 'Montserrat', sans-serif; display: flex; height: 100vh; flex-direction: row; }
+        
+        /* Sidebar */
+        nav { width: 250px; background: var(--surface); border-right: 1px solid rgba(141,91,62,0.2); padding: 30px 20px; overflow-y: auto; }
+        .nav-label { font-size: 0.6rem; letter-spacing: 4px; color: var(--clay); text-transform: uppercase; margin-bottom: 20px; display: block; }
+        nav a { display: block; padding: 12px; color: #555; text-decoration: none; font-size: 0.8rem; border-radius: 2px; margin-bottom: 5px; transition: 0.3s; }
+        nav a.active { background: rgba(141,91,62,0.1); color: var(--cream); border-left: 3px solid var(--clay); }
+        nav a:hover:not(.active) { color: var(--cream); background: #1a1a1a; }
+
+        /* Content Area */
+        main { flex: 1; padding: 40px; overflow-y: auto; display: flex; flex-direction: column; }
+        .header { margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center; }
+        h1 { font-size: 1.5rem; letter-spacing: -1px; margin: 0; text-transform: lowercase; }
+        
+        #globalSearch { 
+            width: 100%; padding: 15px; background: #111; border: 1px solid #222; 
+            color: white; font-family: 'Montserrat'; outline: none; margin-bottom: 25px;
+        }
+
+        /* Data Views */
+        .table-wrap { background: var(--surface); border: 1px solid #222; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.75rem; }
+        th { text-align: left; padding: 15px; background: #1a1a1a; color: var(--clay); text-transform: uppercase; letter-spacing: 1px; }
+        td { padding: 15px; border-bottom: 1px solid #1f1f1f; color: #888; }
+        tr:hover td { color: var(--cream); background: #1a1a1a; }
+
+        /* The Toggle Button */
+        .toggle-btn {
+            text-decoration: none; padding: 4px 10px; border-radius: 20px; font-size: 0.6rem; 
+            font-weight: bold; color: white; display: inline-block; text-align: center; min-width: 60px;
+        }
+        .bg-active { background: var(--green); }
+        .bg-locked { background: var(--red); }
+
+        .count-pill { background: #222; color: var(--clay); padding: 2px 6px; border-radius: 3px; font-weight: bold; font-size: 0.65rem; }
+
+        /* Mobile Adjustments */
+        @media (max-width: 850px) {
+            body { flex-direction: column; }
+            nav { width: 100%; height: auto; display: flex; gap: 10px; padding: 10px; overflow-x: auto; border-bottom: 1px solid #222; }
+            .nav-label { display: none; }
+            nav a { margin-bottom: 0; white-space: nowrap; }
+            main { padding: 20px; }
+            .mobile-hide { display: none; }
+            .card { background: var(--surface); padding: 15px; margin-bottom: 15px; border: 1px solid #222; }
+            .card-item { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #222; font-size: 0.8rem; }
+        }
+    </style>
+</head>
+<body>
+
+<nav>
+    <span class="nav-label">System Tables</span>
+    {% for table in tables %}
+    <a href="/overlord/explorer/{{ table }}" class="{{ 'active' if active_table == table }}">{{ table }}</a>
+    {% endfor %}
+</nav>
+
+<main>
+    <div class="header">
+        <h1>{{ active_table or 'explorer' }}.</h1>
+        <span class="nav-label">{{ rows|length }} entries</span>
+    </div>
+
+    {% if active_table %}
+    <input type="text" id="globalSearch" placeholder="Search {{ active_table }}..." onkeyup="filterRows()">
+
+    <div class="table-wrap mobile-hide">
+        <table>
+            <thead>
+                <tr>
+                    {% for col in columns %}<th>{{ col }}</th>{% endfor %}
+                    {% if active_table == 'kiosks' %}<th>Control</th>{% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in rows %}
+                <tr class="searchable">
+                    {% for col in columns %}
+                    <td>
+                        {% if col.endswith('_count') %}<span class="count-pill">{{ row[col] }}</span>
+                        {% else %}{{ row[col] }}{% endif %}
+                    </td>
+                    {% endfor %}
+                    
+                    {# Special Toggle Logic #}
+                    {% if active_table == 'kiosks' %}
+                    <td>
+                        <a href="/overlord/toggle/{{ row.id }}" class="toggle-btn {{ 'bg-active' if row.is_active == 1 else 'bg-locked' }}">
+                            {{ 'ACTIVE' if row.is_active == 1 else 'LOCKED' }}
+                        </a>
+                    </td>
+                    {% endif %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="mobile-show">
+        {% for row in rows %}
+        <div class="card searchable">
+            {% for col in columns %}
+            <div class="card-item">
+                <span style="color:var(--clay); font-size:0.6rem; text-transform:uppercase;">{{ col }}</span>
+                <span>{{ row[col] }}</span>
+            </div>
+            {% endfor %}
+            
+            {% if active_table == 'kiosks' %}
+            <div class="card-item" style="border:none; margin-top:10px;">
+                <span style="color:var(--clay); font-size:0.6rem; text-transform:uppercase;">Access control</span>
+                <a href="/overlord/toggle/{{ row.id }}" class="toggle-btn {{ 'bg-active' if row.is_active == 1 else 'bg-locked' }}">
+                    {{ 'ACTIVE' if row.is_active == 1 else 'LOCKED' }}
+                </a>
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+</main>
+
+<script>
+function filterRows() {
+    let input = document.getElementById("globalSearch").value.toLowerCase();
+    document.querySelectorAll(".searchable").forEach(el => {
+        el.style.display = el.innerText.toLowerCase().includes(input) ? "" : "none";
+    });
+}
+</script>
+
+</body>
+</html>

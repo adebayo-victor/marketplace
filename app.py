@@ -305,7 +305,7 @@ def new_kiosk():
         try:
             k_id = db.execute("""
                 INSERT INTO kiosks (merchant_id, kiosk_name, slug, description, is_active)
-                VALUES (?, ?, ?, ?, 0)
+                VALUES (?, ?, ?, ?, 1)
             """, session["merchant_id"], name, slug, vibe)
 
             # 🟢 PASS THE DATA BUNDLE TO THE ARCHITECT
@@ -402,16 +402,25 @@ def get_products():
 
 
 
-def format_to_wat(utc_time_str):
-    if not utc_time_str:
+def format_to_wat(utc_val):
+    if not utc_val:
         return ""
-    # 1. Parse the string from SQLite
-    utc_dt = datetime.strptime(utc_time_str, "%Y-%m-%d %H:%M:%S")
-    # 2. Define Timezones
+    
+    # If it's already a datetime object, use it. If it's a string, parse it.
+    if isinstance(utc_val, str):
+        utc_dt = datetime.strptime(utc_val, "%Y-%m-%d %H:%M:%S")
+    else:
+        utc_dt = utc_val
+
+    # Define Timezones
     utc_tz = pytz.timezone('UTC')
     wat_tz = pytz.timezone('Africa/Lagos')
-    # 3. Convert
-    wat_dt = utc_tz.localize(utc_dt).astimezone(wat_tz)
+    
+    # Ensure it has UTC info before converting to WAT
+    if utc_dt.tzinfo is None:
+        utc_dt = utc_tz.localize(utc_dt)
+        
+    wat_dt = utc_dt.astimezone(wat_tz)
     return wat_dt.strftime("%b %d, %I:%M %p")
 
 # Add this to your Flask app so the template can use it
@@ -556,6 +565,50 @@ def verify_payment(slug):
     except Exception as e:
         return f"Verification Error: {e}", 500
 
+@app.route("/overlord/explorer")
+@app.route("/overlord/explorer/<table_name>")
+def db_explorer(table_name=None):
+    # Get all table names
+    tables_query = db.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'")
+    table_list = [t['table_name'] for t in tables_query]
+
+    data = []
+    columns = []
+
+    if table_name and table_name in table_list:
+        if table_name == "merchants":
+            # For Merchants: Join and count their Kiosks
+            data = db.execute("""
+                SELECT m.*, (SELECT COUNT(*) FROM kiosks k WHERE k.merchant_id = m.id) as kiosk_count
+                FROM merchants m ORDER BY m.created_at DESC
+            """)
+        elif table_name == "kiosks":
+            # For Kiosks: Count Visits, Orders, and Leads
+            data = db.execute("""
+                SELECT k.*, 
+                (SELECT COUNT(*) FROM visitations v WHERE v.kiosks_id = k.id) as visit_count,
+                (SELECT COUNT(*) FROM orders o WHERE o.kiosks_id = k.id) as order_count,
+                (SELECT COUNT(*) FROM leads l WHERE l.kiosks_id = k.id) as lead_count
+                FROM kiosks k ORDER BY k.id DESC
+            """)
+        else:
+            # Standard fetch for other tables
+            data = db.execute(f"SELECT * FROM {table_name}")
+        
+        if data:
+            columns = data[0].keys()
+
+    return render_template("overlord.html", 
+                           tables=table_list, 
+                           active_table=table_name, 
+                           columns=columns, 
+                           rows=data)
+
+@app.route("/overlord/toggle/<int:k_id>")
+def overlord_toggle(k_id):
+    # Atomic toggle: flips 0 to 1 or 1 to 0
+    db.execute("UPDATE kiosks SET is_active = 1 - is_active WHERE id = ?", k_id)
+    return redirect("/overlord/explorer/kiosk")
 
 if __name__ == "__main__":
     app.run(port=2000, host="0.0.0.0")
