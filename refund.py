@@ -4,7 +4,7 @@ import json
 
 # --- CONFIGURATION ---
 # 1. Replace with your sk_live_xxx key for real money or sk_test_xxx for testing
-SECRET_KEY = "sk_live_b49c66e2e43618e6166f455193856e1e2ab6d182" 
+SECRET_KEY = "" 
 HEADERS = {
     "Authorization": f"Bearer {SECRET_KEY}",
     "Content-Type": "application/json"
