@@ -1,0 +1,13 @@
+{
+    "summary": {
+        "accuracy": "0.0%",
+        "total_sent": 0,
+        "total_failed": 2
+    },
+    "paid_accounts": [],
+    "not_found_in_logs": [],
+    "failed_verification": [
+        "0000000000",
+        "0000000000"
+    ]
+}

@@ -1,4 +1,4 @@
-from flask import Flask, render_template, jsonify, request, redirect, session, render_template_string
+from flask import Flask, render_template, jsonify, request, redirect, session, render_template_string, url_for
 from cs50 import SQL
 import re
 import re
@@ -13,6 +13,9 @@ import pytz
 import google.generativeai as genai
 import hashlib
 import requests
+import json
+from datetime import datetime
+import base64
 # Load the key from a .env file
 load_dotenv()
 #paystack key
@@ -565,50 +568,104 @@ def verify_payment(slug):
     except Exception as e:
         return f"Verification Error: {e}", 500
 
-@app.route("/overlord/explorer")
-@app.route("/overlord/explorer/<table_name>")
-def db_explorer(table_name=None):
-    # Get all table names
-    tables_query = db.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'")
-    table_list = [t['table_name'] for t in tables_query]
 
-    data = []
-    columns = []
 
-    if table_name and table_name in table_list:
-        if table_name == "merchants":
-            # For Merchants: Join and count their Kiosks
-            data = db.execute("""
-                SELECT m.*, (SELECT COUNT(*) FROM kiosks k WHERE k.merchant_id = m.id) as kiosk_count
-                FROM merchants m ORDER BY m.created_at DESC
-            """)
-        elif table_name == "kiosks":
-            # For Kiosks: Count Visits, Orders, and Leads
-            data = db.execute("""
-                SELECT k.*, 
-                (SELECT COUNT(*) FROM visitations v WHERE v.kiosks_id = k.id) as visit_count,
-                (SELECT COUNT(*) FROM orders o WHERE o.kiosks_id = k.id) as order_count,
-                (SELECT COUNT(*) FROM leads l WHERE l.kiosks_id = k.id) as lead_count
-                FROM kiosks k ORDER BY k.id DESC
-            """)
-        else:
-            # Standard fetch for other tables
-            data = db.execute(f"SELECT * FROM {table_name}")
+
+
+
+# Helper to handle dates
+def json_serial(obj):
+    if isinstance(obj, datetime):
+        return obj.isoformat()
+    raise TypeError(f"Type {type(obj)} not serializable")
+
+# Main Explorer Route
+@app.route("/overlord/explorer/<view>")
+def db_explorer(view="merchants"):
+    # Add "products" here so the KeyError vanishes
+    table_map = {
+        "merchants": "merchants", 
+        "kiosks": "kiosks",
+        "products": "products" 
+    }
+    
+    # Safety check: if the view isn't in our map, default to merchants
+    if view not in table_map:
+        return redirect(url_for('db_explorer', view='merchants'))
+    
+    rows = db.execute(f"SELECT * FROM {table_map[view]}")
+    
+    processed_rows = []
+    for row in rows:
+        row_dict = dict(row)
+        json_str = json.dumps(row_dict, default=json_serial)
+        row_dict['b64_data'] = base64.b64encode(json_str.encode()).decode()
+        processed_rows.append(row_dict)
         
-        if data:
-            columns = data[0].keys()
+    return render_template("overlord.html", view=view, rows=processed_rows)
 
-    return render_template("overlord.html", 
-                           tables=table_list, 
-                           active_table=table_name, 
-                           columns=columns, 
-                           rows=data)
+# API: Get Kiosks for a Merchant
+@app.route("/overlord/api/kiosks/<int:merchant_id>")
+def get_merchant_kiosks(merchant_id):
+    kiosks = db.execute("SELECT * FROM kiosks WHERE merchant_id = ?", (merchant_id,))
+    return jsonify([dict(k) for k in kiosks])
 
-@app.route("/overlord/toggle/<int:k_id>")
-def overlord_toggle(k_id):
-    # Atomic toggle: flips 0 to 1 or 1 to 0
-    db.execute("UPDATE kiosks SET is_active = 1 - is_active WHERE id = ?", k_id)
-    return redirect("/overlord/explorer/kiosk")
+# API: Get Products for a Kiosk
+@app.route("/overlord/api/products/<int:kiosk_id>")
+def get_kiosk_products(kiosk_id):
+    products = db.execute("SELECT * FROM products WHERE kiosks_id = ?", (kiosk_id,))
+    return jsonify([dict(p) for p in products])
 
+# Action: Create Entry
+@app.route("/overlord/create/<view>", methods=["POST"])
+def create_entry(view):
+    # Logic for insertion based on view goes here
+    return redirect(url_for('db_explorer', view=view))
+
+# Action: Update Generic Entry
+@app.route("/overlord/update/<view>/<int:id>", methods=["POST"])
+def update_entry(view, id):
+    # This remains for general field updates
+    return redirect(url_for('db_explorer', view=view))
+
+# Action: Delete Entry (Handles Merchants, Kiosks, and Products)
+@app.route("/overlord/delete/<view>/<int:id>")
+def delete_entry(view, id):
+    db.execute(f"DELETE FROM {view} WHERE id = ?", (id,))
+    return redirect(request.referrer or url_for('db_explorer', view=view))
+
+# Action: Toggle Kiosk Status
+@app.route("/overlord/toggle/kiosks/<int:id>/<int:status>")
+def toggle_kiosk(id, status):
+    db.execute("UPDATE kiosks SET is_active = ? WHERE id = ?", (status, id))
+    return redirect(url_for('db_explorer', view='kiosks'))
+
+# Action: Update Kiosk HTML (Specialized Editor)
+@app.route("/overlord/update/kiosks/html/<int:id>", methods=["POST"])
+def update_kiosk_html(id):
+    new_html = request.form.get("generated_html")
+    db.execute("UPDATE kiosks SET generated_html = ? WHERE id = ?", (new_html, id))
+    return redirect(url_for('db_explorer', view='kiosks'))
+
+# Action: Update Kiosk Properties
+@app.route("/overlord/update/kiosks/props/<int:id>", methods=["POST"])
+def update_kiosk_properties(id):
+    name = request.form.get('kiosk_name')
+    slug = request.form.get('slug')
+    desc = request.form.get('description')
+    color = request.form.get('theme_color')
+    
+    db.execute("""
+        UPDATE kiosks 
+        SET kiosk_name = ?, slug = ?, description = ?, theme_color = ? 
+        WHERE id = ?
+    """, (name, slug, desc, color, id))
+    return redirect(url_for('db_explorer', view='kiosks'))
+@app.route("/overlord/update/kiosks/html/<int:id>", methods=["POST"])
+def update_kiosk_gen_html(id):
+    new_html = request.form.get("generated_html")
+    # Update the generated_html column for this specific kiosk
+    db.execute("UPDATE kiosks SET generated_html = ? WHERE id = ?", (new_html, id))
+    return redirect(url_for('db_explorer', view='kiosks'))
 if __name__ == "__main__":
     app.run(port=2000, host="0.0.0.0")
