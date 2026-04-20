@@ -6,7 +6,7 @@
     <title>New Product // {{ kiosk.kiosk_name }}</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;600&display=swap');
-        :root { --brand: {{ kiosk.theme_color }}; --dark: #2d1e14; --bg: #f9f5f0; }
+        :root { --brand: {{ kiosk.theme_color or '#8d5b3e' }}; --dark: #2d1e14; --bg: #f9f5f0; }
         
         body { background: var(--bg); font-family: 'Georgia', serif; margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
         
@@ -17,13 +17,20 @@
         .field { margin-bottom: 25px; }
         label { display: block; font-family: 'Montserrat'; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; color: #888; margin-bottom: 8px; }
         
-        input { width: 100%; padding: 12px 0; border: none; border-bottom: 1px solid #eee; font-family: 'Georgia'; font-size: 1rem; outline: none; transition: 0.3s; }
+        input { width: 100%; padding: 12px 0; border: none; border-bottom: 1px solid #eee; font-family: 'Georgia'; font-size: 1rem; outline: none; transition: 0.3s; background: transparent; }
         input:focus { border-bottom-color: var(--brand); }
+
+        /* Style for the file input to match the aesthetic */
+        input[type="file"] { font-size: 0.8rem; font-family: 'Montserrat'; color: #666; padding: 10px 0; cursor: pointer; }
 
         .row { display: flex; gap: 20px; }
         .row .field { flex: 1; }
 
-        .btn-submit { width: 100%; padding: 20px; background: var(--dark); color: white; border: none; font-family: 'Montserrat'; font-weight: 600; cursor: pointer; margin-top: 20px; letter-spacing: 2px; }
+        #preview-container { text-align: center; margin-bottom: 20px; display: none; }
+        #preview-img { max-width: 100%; max-height: 200px; border-radius: 4px; border: 1px solid #eee; }
+
+        .btn-submit { width: 100%; padding: 20px; background: var(--dark); color: white; border: none; font-family: 'Montserrat'; font-weight: 600; cursor: pointer; margin-top: 20px; letter-spacing: 2px; transition: 0.3s; }
+        .btn-submit:hover { background: var(--brand); }
         .back-link { display: block; text-align: center; margin-top: 25px; font-size: 0.8rem; color: #aaa; text-decoration: none; }
     </style>
 </head>
@@ -32,7 +39,18 @@
     <div class="form-card">
         <h2>Add to {{ kiosk.kiosk_name }}.</h2>
         
-        <form action="/{{ kiosk.slug }}/product/new" method="POST">
+        <form action="/{{ kiosk.slug }}/product/new" method="POST" enctype="multipart/form-data">
+            
+            <div id="preview-container">
+                <label>Image Preview</label>
+                <img id="preview-img" src="#" alt="Preview">
+            </div>
+
+            <div class="field">
+                <label>Product Image</label>
+                <input type="file" name="product_image" accept="image/*" onchange="previewFile(this)" required>
+            </div>
+
             <div class="field">
                 <label>Product Name</label>
                 <input type="text" name="name" placeholder="e.g. Glazed Pitcher" required>
@@ -49,16 +67,32 @@
                 </div>
             </div>
 
-            <div class="field">
-                <label>Image URL</label>
-                <input type="url" name="image_url" placeholder="https://unsplash.com/...">
-            </div>
-
             <button type="submit" class="btn-submit">ENLIST PRODUCT</button>
         </form>
 
         <a href="/{{ kiosk.slug }}/manage" class="back-link">&larr; Cancel and return</a>
     </div>
+
+    <script>
+        function previewFile(input) {
+            const container = document.getElementById('preview-container');
+            const preview = document.getElementById('preview-img');
+            const file = input.files[0];
+            const reader = new FileReader();
+
+            reader.onloadend = function () {
+                preview.src = reader.result;
+                container.style.display = "block";
+            }
+
+            if (file) {
+                reader.readAsDataURL(file);
+            } else {
+                preview.src = "";
+                container.style.display = "none";
+            }
+        }
+    </script>
 
 </body>
 </html>

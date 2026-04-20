@@ -16,6 +16,9 @@ import requests
 import json
 from datetime import datetime
 import base64
+import io
+import cloudinary
+import cloudinary.uploader
 # Load the key from a .env file
 load_dotenv()
 #paystack key
@@ -30,6 +33,61 @@ genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 app = Flask(__name__)
 db = SQL(os.environ.get("DATABASE_URL"))
 app.secret_key = 'super-secret-key-for-marketplace'
+
+#cloudinary configuration
+cloudinary.config( 
+  cloud_name = os.environ.get("CLOUDINARY_NAME"), 
+  api_key = os.environ.get("CLOUDINARY_API_KEY"), 
+  api_secret = os.environ.get("CLOUDINARY_API_SECRET"),
+  secure = True
+)
+
+def upload_bytes_to_cloudinary(file_bytes, folder_name="general"):
+    """
+    Takes raw bytes, wraps them in a buffer, and streams to Cloudinary.
+    """
+    try:
+        # Wrap the bytes in a file-like buffer
+        image_stream = io.BytesIO(file_bytes)
+        
+        response = cloudinary.uploader.upload(
+            image_stream,
+            folder=f"marketplace/{folder_name}",
+            resource_type="auto" # Handles images, icons, or backgrounds
+        )
+        return response.get("secure_url")
+    except Exception as e:
+        print(f"❌ RAM-to-Cloudinary Error: {e}")
+        return None
+
+def extract_public_id(url):
+    # Splits URL and grabs the part after '/upload/v123456789/'
+    # This is a bit fragile but works if your folder structure is consistent
+    parts = url.split('/')
+    # Public ID is usually everything after the version number (starts with 'v')
+    for i, part in enumerate(parts):
+        if part.startswith('v') and part[1:].isdigit():
+            # Join the remaining parts and strip the file extension (.jpg)
+            return "/".join(parts[i+1:]).split('.')[0]
+    return None
+
+import cloudinary.uploader
+
+def delete_cloudinary_image(public_id):
+    """
+    Deletes an image from Cloudinary using its Public ID.
+    """
+    try:
+        response = cloudinary.uploader.destroy(public_id)
+        if response.get("result") == "ok":
+            print(f"✅ Deleted: {public_id}")
+            return True
+        else:
+            print(f"⚠️ Cloudinary Error: {response}")
+            return False
+    except Exception as e:
+        print(f"❌ Deletion failed: {e}")
+        return False    
 
 @app.route("/")
 def index():
@@ -171,25 +229,40 @@ def add_product(slug):
     if "merchant_id" not in session:
         return redirect("/login")
 
-    # Verify ownership of the kiosk
-    kiosk = db.execute("SELECT * FROM kiosks WHERE slug = ? AND merchant_id = ?", slug, session["merchant_id"])
-    if not kiosk:
+    # Verify ownership
+    rows = db.execute("SELECT * FROM kiosks WHERE slug = ? AND merchant_id = ?", slug, session["merchant_id"])
+    if not rows:
         return "Unauthorized", 403
+    kiosk = rows[0]
 
     if request.method == "POST":
         name = request.form.get("name")
         price = request.form.get("price")
         stock = request.form.get("stock")
-        image_url = request.form.get("image_url")
+        
+        # 🟢 Handle Product Image Upload
+        file = request.files.get("product_image")
+        image_url = None
 
+        if file and file.filename != '':
+            # Stream bytes directly to Cloudinary
+            file_bytes = file.read()
+            # Organizing by kiosk slug makes managing your Cloudinary dashboard easier
+            image_url = upload_bytes_to_cloudinary(file_bytes, f"products_{slug}")
+        
+        # Fallback if no image was uploaded
+        if not image_url:
+            image_url = "https://via.placeholder.com/400x400?text=No+Image"
+
+        # Insert into DB
         db.execute("""
             INSERT INTO products (kiosks_id, name, price, stock, image_url)
             VALUES (?, ?, ?, ?, ?)
-        """, kiosk[0]["id"], name, price, stock, image_url)
+        """, kiosk["id"], name, price, stock, image_url)
 
         return redirect(f"/{slug}/manage")
 
-    return render_template("add_product.html", kiosk=kiosk[0])
+    return render_template("add_product.html", kiosk=kiosk)
 
 @app.route("/<slug>/product/edit/<int:product_id>", methods=["GET", "POST"])
 def edit_product(slug, product_id):
@@ -278,90 +351,151 @@ def edit_product(slug, product_id):
 
 
 
+import random
+import string
+from flask import request, session, redirect, render_template, jsonify
+
 @app.route("/kiosk/new", methods=["GET", "POST"])
 def new_kiosk():
+    # 1. AUTH CHECK
     if "merchant_id" not in session:
         return redirect("/login")
     
     if request.method == "POST":
+        # Pull basic info
         name = request.form.get("kiosk_name")
         vibe = request.form.get("vibe")
+        # Ensure you have the merchant's whatsapp number (fallback to a dummy if not in session)
+        whatsapp = session.get("merchant_phone", "2348000000000") 
         
-        # 🟢 COLLECT MODULES & SPECIFIC DETAILS
-        module_data = {
-            "hero": request.form.get("hero_text") if request.form.get("module_hero") else None,
-            "faq": request.form.get("faq_focus") if request.form.get("module_faq") else None,
-            "reviews": request.form.get("review_style") if request.form.get("module_reviews") else None
-        }
-
-        merchant = db.execute("SELECT whatsapp_number FROM merchants WHERE id = ?", session["merchant_id"])[0]
-        whatsapp = merchant["whatsapp_number"]
-
+        # 2. UNIQUE SLUG ENGINE
         base_slug = slugify(name)
         slug = base_slug
         while True:
             existing = db.execute("SELECT id FROM kiosks WHERE slug = ?", slug)
-            if not existing: break
+            if not existing:
+                break 
             suffix = ''.join(random.choices(string.ascii_lowercase + string.digits, k=3))
             slug = f"{base_slug}-{suffix}"
 
-        try:
-            k_id = db.execute("""
-                INSERT INTO kiosks (merchant_id, kiosk_name, slug, description, is_active)
-                VALUES (?, ?, ?, ?, 1)
-            """, session["merchant_id"], name, slug, vibe)
+        # 3. MEMORY-TO-CLOUDINARY UPLOAD
+        image_slots = ["logo_url", "banner_url", "gallery_1", "gallery_2", "background_url"]
+        uploaded_urls = {}
 
-            # 🟢 PASS THE DATA BUNDLE TO THE ARCHITECT
-            generated_html = generate_kiosk_architecture(name, vibe, k_id, whatsapp, module_data)
-            
-            db.execute("UPDATE kiosks SET generated_html = ? WHERE id = ?", generated_html, k_id)
-            
+        for slot in image_slots:
+            file = request.files.get(slot)
+            if file and file.filename != '':
+                file_bytes = file.read()
+                # Use the function we built earlier
+                url = upload_bytes_to_cloudinary(file_bytes, f"kiosk_{slug}")
+                uploaded_urls[slot] = url
+            else:
+                uploaded_urls[slot] = None
+
+        # 4. INITIAL DATABASE INSERT (The "Foundation")
+        try:
+            # We insert first to get the k_id (the primary key)
+            k_id = db.execute("""
+                INSERT INTO kiosks (
+                    merchant_id, kiosk_name, slug, description, 
+                    logo_url, banner_url, gallery_1, gallery_2, background_url, 
+                    is_active
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
+            """, 
+            session["merchant_id"], name, slug, vibe,
+            uploaded_urls["logo_url"], uploaded_urls["banner_url"], 
+            uploaded_urls["gallery_1"], uploaded_urls["gallery_2"], 
+            uploaded_urls["background_url"])
+
+            # 5. PREPARE MODULE DATA FOR AI
+            module_data = {
+                "hero": request.form.get("hero_text"),
+                "faq": request.form.get("faq_focus"),
+                "reviews": request.form.get("review_style")
+            }
+
+            # 6. TRIGGER THE AI ARCHITECT
+            # Pass the freshly minted k_id and the uploaded URLs
+            ai_html = generate_kiosk_architecture(
+                name=name, 
+                vibe=vibe, 
+                kiosk_id=k_id, 
+                whatsapp=whatsapp, 
+                module_data=module_data, 
+                images=uploaded_urls
+            )
+
+            # 7. THE FINAL BRICK: Update the row with the code
+            if ai_html:
+                db.execute("UPDATE kiosks SET generated_html = ? WHERE id = ?", ai_html, k_id)
+            else:
+                print(f"⚠️ Error: AI generated no code for Kiosk ID {k_id}")
+
             return redirect("/dashboard")
 
         except Exception as e:
-            print(f"Database/AI Error: {e}")
-            return f"Something went wrong: {e}", 500
+            print(f"❌ Critical Failure in new_kiosk: {e}")
+            return f"Construction Error: {e}", 500
 
+    # GET request returns the form
     return render_template("create_kiosk.html")
 
 # 🟢 UPDATE THE ARCHITECT FUNCTION
-def generate_kiosk_architecture(name, vibe, kiosk_id, whatsapp, module_data):
+def generate_kiosk_architecture(name, vibe, kiosk_id, whatsapp, module_data, images):
     model = genai.GenerativeModel('gemini-3-flash-preview')
     
-    # Constructing deep-dive instructions for the AI
+    # Constructing visual context
+    visual_specs = f"""
+    VISUAL ASSETS (MANDATORY: Use these URLs in the HTML):
+    - Logo: {images.get('logo_url') or 'none'}
+    - Hero Banner: {images.get('banner_url') or 'none'}
+    - Gallery 1: {images.get('gallery_1') or 'none'}
+    - Gallery 2: {images.get('gallery_2') or 'none'}
+    - Page Background: {images.get('background_url') or 'none'}
+    """
+    
     extra_specs = ""
     if module_data.get('hero'):
-        extra_specs += f"- HERO BANNER: Use this specific direction: '{module_data['hero']}'.\n"
+        extra_specs += f"- HERO SECTION: Use this direction: '{module_data['hero']}'.\n"
     if module_data.get('faq'):
-        extra_specs += f"- FAQ SECTION: Create 3 Q&As focusing on: '{module_data['faq']}'.\n"
+        extra_specs += f"- FAQ SECTION: Focus on: '{module_data['faq']}'.\n"
     if module_data.get('reviews'):
-        extra_specs += f"- TESTIMONIALS: Generate reviews in this style: '{module_data['reviews']}'.\n"
+        extra_specs += f"- REVIEWS: Style them as: '{module_data['reviews']}'.\n"
     
     prompt = f"""
         Act as a Senior Full-Stack Web Designer. Build a single-file HTML storefront for '{name}'.
         VIBE: {vibe}
         
+        {visual_specs}
+        
         ARCHITECTURE REQUIREMENTS:
         {extra_specs if extra_specs else "- Standard Product Grid only."}
+        - DESIGN STYLE: Figma-inspired. Use 8px grid spacing, soft shadows (rgba 0,0,0,0.05), and Plus Jakarta Sans.
+        - DYNAMICITY: Implement skeleton loaders (shimmer effect) while fetching data. Use a JS 'state' object to manage the UI.
+        - ANIMATION STRATEGY: Select the most appropriate motion style from this list to match the vibe: 
+        [Micro-Interactions, Cinematic Scrollytelling, Kinetic Typography, 3D Immersion (CSS-based), Organic Fluidity, or Neo-Brutalism].
         
         TECHNICAL SPECS:
-        1. STYLING: Premium CSS in a <style> block. Must reflect the '{vibe}'. Mobile-first, glassmorphism, or high-end minimal UI.
-        2. DATA LOGIC: 
-           - Fetch products from '/api/get_products' via POST {{ "kiosk_id": {kiosk_id} }}.
-           - Manage a shopping cart using localStorage.
-           - Redirect orders to: https://wa.me/{whatsapp}?text=Hello, I want to order...
-        3. MANDATORY:
-           - A clean, functional Product Grid.
-           - All requested sections from the 'ARCHITECTURE REQUIREMENTS' must be fully styled and populated with AI-generated content based on the provided details.
-
-        Return ONLY raw HTML/CSS/JS. No markdown code blocks, no preamble.
+        1. STYLING: Premium CSS in a <style> block. Use backdrop-filter for glassmorphism headers.
+        2. ASSETS: If an asset URL is 'none', use a CSS-only decorative fallback (like a gradient). Do NOT use placeholder.com.
+        3. DATA: Fetch products from '/api/get_products' via POST {{ "kiosk_id": {kiosk_id} }}.The src can be gotten from the fetched data, the key is "image_url"
+        4. CART: Implement a sliding 'Cart Drawer'. Users must be able to adjust quantities and see a subtotal.
+        5. CHECKOUT & LEAD CAPTURE: [prices in naira]
+        - Build a form for Customer Name and WhatsApp/Phone.
+        - DISCREET ACTION: When the form is submitted, first send a background POST request to '/api/capture_lead' with {{ "kiosk_id": {kiosk_id}, "name": name, "phone": phone }}. 
+        - DO NOT wait for this request to finish before proceeding to the WhatsApp redirect.
+        6. WHATSAPP BRIDGE: After lead capture, redirect to: https://wa.me/{whatsapp}?text=... (Include Name, Itemized List, and Total).
+        7. LOGIC: Use standard 'if/else' statements. **DO NOT use ternary operators (?:)** in the code.
+        8. Ensure the background is visible, but the styling remains unaffected
+        9.Add a dark/light theme toggle
+        10.Footnote: Marketplace project, powered by  techlite.
+        Return ONLY raw HTML/CSS/JS. No markdown, no preamble.
     """
     
     try:
         response = model.generate_content(prompt)
-        # Clean up any potential markdown garbage just in case
-        clean_html = response.text.replace("```html", "").replace("```", "").strip()
-        return clean_html
+        return response.text.replace("```html", "").replace("```", "").strip()
     except Exception as e:
         return f"<div style='padding:20px; color:red;'>Architectural failure: {e}</div>"
 
@@ -371,18 +505,26 @@ def generate_kiosk_architecture(name, vibe, kiosk_id, whatsapp, module_data):
 
 @app.route("/<slug>")
 def view_kiosk(slug):
-    # Fetch the kiosk and check if it's active
-    kiosk = db.execute("SELECT * FROM kiosks WHERE slug = ?", slug)
+    # 1. Fetch the rows
+    rows = db.execute("SELECT * FROM kiosks WHERE slug = ?", slug)
     
-    if not kiosk:
-        return "Kiosk not found", 404
+    # 2. Check if the list is empty first 
+    if not rows or len(rows) == 0:
+        return "<h1>404 - Kiosk Not Found</h1><p>The shop you're looking for doesn't exist yet.</p>", 404
         
-    # THE GATEKEEPER 🔒
-    if kiosk[0]["is_active"] == 0:
-        return render_template("locked_site.html", kiosk=kiosk[0])
+    kiosk = rows[0]
+    
+    # 3. Check the lock status
+    # Note: Use '==' or 'not' to ensure we capture the 0/1 integer from SQL
+    if kiosk["is_active"] == 0:
+        return render_template("locked_site.html", kiosk=kiosk)
 
-    # If active, continue to render the AI-generated site
-    return kiosk[0]["generated_html"]
+    # 4. Final safety check: Does generated_html actually have content?
+    if not kiosk['generated_html']:
+        return "<h1>Site Under Construction</h1><p>The architect is still laying the bricks.</p>", 200
+
+    # 5. Return the raw HTML string
+    return kiosk["generated_html"]
 
 
 
@@ -453,20 +595,29 @@ def delete_product(slug, product_id):
     if "merchant_id" not in session:
         return redirect("/login")
 
-    # 1. Verify ownership (Join product -> kiosk -> merchant)
-    check = db.execute("""
-        SELECT products.id FROM products
+    # 1. Fetch image URL and Verify ownership
+    # We select image_url specifically so we can delete it from the cloud
+    product = db.execute("""
+        SELECT products.image_url FROM products
         JOIN kiosks ON products.kiosks_id = kiosks.id
         WHERE products.id = ? AND kiosks.slug = ? AND kiosks.merchant_id = ?
     """, product_id, slug, session["merchant_id"])
 
-    if not check:
+    if not product:
         return "Unauthorized action or product not found.", 403
 
-    # 2. Delete the product
+    # 2. Extract Public ID and Kill the Cloud Image ☁️💀
+    img_url = product[0]["image_url"]
+    
+    # We only try to delete if it's a Cloudinary link (not a placeholder)
+    if img_url and "cloudinary.com" in img_url:
+        public_id = extract_public_id(img_url)
+        if public_id:
+            delete_cloudinary_image(public_id)
+
+    # 3. Delete from Local Database
     db.execute("DELETE FROM products WHERE id = ?", product_id)
     
-    # 3. Flash back to the management page
     return redirect(f"/{slug}/manage")
 
 @app.route("/<slug>/delete")
@@ -474,17 +625,41 @@ def delete_kiosk(slug):
     if "merchant_id" not in session:
         return redirect("/login")
 
-    # 1. Verify the merchant actually owns this kiosk
-    kiosk = db.execute("SELECT id FROM kiosks WHERE slug = ? AND merchant_id = ?", 
-                       slug, session["merchant_id"])
+    # 1. Fetch Kiosk Data and Assets
+    kiosk = db.execute("""
+        SELECT id, logo_url, banner_url, gallery_1, gallery_2, background_url 
+        FROM kiosks WHERE slug = ? AND merchant_id = ?
+    """, slug, session["merchant_id"])
 
     if not kiosk:
         return "Unauthorized or Kiosk not found.", 403
 
     k_id = kiosk[0]["id"]
+    kiosk_data = kiosk[0]
 
-    # 2. The Great Wipeout 😈
-    # Remove everything linked to this kiosk ID
+    # 2. Gather ALL Image URLs to be purged
+    urls_to_clean = [
+        kiosk_data["logo_url"],
+        kiosk_data["banner_url"],
+        kiosk_data["gallery_1"],
+        kiosk_data["gallery_2"],
+        kiosk_data["background_url"]
+    ]
+
+    # Add all product images from this kiosk to the list
+    product_rows = db.execute("SELECT image_url FROM products WHERE kiosks_id = ?", k_id)
+    for row in product_rows:
+        urls_to_clean.append(row["image_url"])
+
+    # 3. The Cloudinary Clean-up ☁️💀
+    for url in urls_to_clean:
+        if url and "cloudinary.com" in url:
+            p_id = extract_public_id(url)
+            if p_id:
+                delete_cloudinary_image(p_id)
+
+    # 4. The Database Wipeout
+    # Delete child records first to satisfy foreign key constraints
     db.execute("DELETE FROM products WHERE kiosks_id = ?", k_id)
     db.execute("DELETE FROM leads WHERE kiosks_id = ?", k_id)
     db.execute("DELETE FROM visitations WHERE kiosks_id = ?", k_id)
@@ -493,7 +668,6 @@ def delete_kiosk(slug):
     # Finally, kill the kiosk itself
     db.execute("DELETE FROM kiosks WHERE id = ?", k_id)
 
-    # 3. Send them back to the main dashboard
     return redirect("/dashboard")
 
 
@@ -644,7 +818,7 @@ def toggle_kiosk(id, status):
 @app.route("/overlord/update/kiosks/html/<int:id>", methods=["POST"])
 def update_kiosk_html(id):
     new_html = request.form.get("generated_html")
-    db.execute("UPDATE kiosks SET generated_html = ? WHERE id = ?", (new_html, id))
+    db.execute("UPDATE kiosks SET generated_html = ? WHERE id = ?", new_html, id)
     return redirect(url_for('db_explorer', view='kiosks'))
 
 # Action: Update Kiosk Properties

@@ -28,6 +28,14 @@ db.execute("""
         slug TEXT NOT NULL UNIQUE,
         description TEXT,
         theme_color TEXT DEFAULT '#8d5b3e',
+        
+        -- The 5 Visual Slots 📸
+        logo_url TEXT,
+        banner_url TEXT,
+        gallery_1 TEXT,
+        gallery_2 TEXT,
+        background_url TEXT,
+
         generated_html TEXT,
         is_active INTEGER DEFAULT 0,
         payment_ref TEXT,
@@ -35,7 +43,6 @@ db.execute("""
         FOREIGN KEY (merchant_id) REFERENCES merchants(id) ON DELETE CASCADE
     )
 """)
-
 # 3. Products Table
 db.execute("""
     CREATE TABLE IF NOT EXISTS products (
@@ -155,5 +162,18 @@ print("Cloud Database checked/initialized successfully. ✅")'''
 if __name__ == "__main__":
     seed()'''
 
-print(db.execute("UPDATE kiosks SET is_active = 1 WHERE kiosk_name = 'Otaku fashion corner '"))
-print(db.execute("SELECT kiosk_name, is_active FROM kiosks"))
+#print(db.execute("UPDATE kiosks SET is_active = 1 WHERE kiosk_name = 'Otaku fashion corner '"))
+#print(db.execute("SELECT kiosk_name, is_active FROM kiosks"))
+
+try:
+    db.execute("""
+        ALTER TABLE kiosks 
+        ADD COLUMN logo_url TEXT,
+        ADD COLUMN banner_url TEXT,
+        ADD COLUMN gallery_1 TEXT,
+        ADD COLUMN gallery_2 TEXT,
+        ADD COLUMN background_url TEXT
+    """)
+    print("Kiosk expanded to 5 visual slots! ✅")
+except Exception as e:
+    print(f"Migration check: {e}")

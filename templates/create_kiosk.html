@@ -12,19 +12,56 @@
             --dark: #2d1e14; 
             --bg: #f9f5f0; 
             --white: #ffffff;
+            --accent: #e0d5c5;
         }
         
         body { 
             background: var(--bg); 
             font-family: 'Georgia', serif; 
             display: flex; 
-            justify-content: center; 
+            flex-direction: column;
             align-items: center; 
             min-height: 100vh; 
             margin: 0; 
             padding: 40px 20px; 
         }
         
+        .guide-box {
+            width: 100%;
+            max-width: 700px;
+            background: var(--white);
+            margin-bottom: 20px;
+            border: 1px solid var(--accent);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .guide-header {
+            padding: 15px 25px;
+            background: var(--accent);
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-family: 'Montserrat';
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .guide-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+            background: #fffcf5;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            color: var(--dark);
+        }
+
+        .guide-content.open { max-height: 400px; padding: 25px; }
+
         .form-card { 
             background: var(--white); 
             padding: 60px; 
@@ -48,22 +85,20 @@
             font-family: 'Montserrat'; 
             text-transform: lowercase; 
             font-size: 2.5rem; 
-            margin: 0 0 10px 0; 
+            margin: 0 0 40px 0; 
             letter-spacing: -1px; 
         }
 
-        .jovial-warning {
-            font-size: 0.9rem;
-            line-height: 1.6;
-            color: var(--dark);
-            margin-bottom: 40px;
-            padding: 25px;
-            background: #fffcf5;
-            border-radius: 4px;
-            border: 1px solid #e0d5c5;
+        .section-title {
+            font-family: 'Montserrat';
+            font-size: 0.8rem;
+            color: var(--clay);
+            border-bottom: 1px solid var(--accent);
+            padding-bottom: 10px;
+            margin-bottom: 25px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
         }
-
-        .jovial-warning strong { color: var(--clay); }
         
         .field { margin-bottom: 45px; }
         
@@ -78,7 +113,7 @@
             letter-spacing: 1px;
         }
         
-        input[type="text"], textarea { 
+        input[type="text"], input[type="file"], textarea { 
             width: 100%; 
             padding: 15px 0; 
             border: none; 
@@ -90,140 +125,122 @@
             transition: 0.3s; 
         }
 
+        input[type="file"] { font-size: 0.9rem; font-family: 'Montserrat'; cursor: pointer; }
         input:focus, textarea:focus { border-bottom-color: var(--clay); }
+        textarea { height: 100px; resize: none; line-height: 1.6; }
         
-        textarea { height: 60px; resize: none; line-height: 1.6; }
-        
-        .vibe-grid {
+        .asset-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
             gap: 12px;
             margin-top: 15px;
         }
 
-        .vibe-chip {
-            padding: 15px;
-            border: 1px solid #eee;
-            background: #fafafa;
-            cursor: pointer;
-            font-family: 'Montserrat';
-            font-size: 0.7rem;
-            font-weight: 600;
-            text-align: center;
-            transition: 0.3s;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
+        .asset-item { padding: 15px; background: #fafafa; border: 1px solid #eee; }
+        .asset-item label { display: block; font-family: 'Montserrat'; font-size: 0.6rem; text-transform: uppercase; margin-bottom: 5px; color: #888; }
 
-        .vibe-chip:hover { border-color: var(--clay); color: var(--clay); }
-        .vibe-chip.selected { background: var(--clay); color: white; border-color: var(--clay); }
-
-        .module-group { margin-bottom: 20px; }
-
+        .module-group { margin-bottom: 10px; }
         .module-item {
-            display: flex;
-            align-items: center;
-            padding: 20px;
-            background: #fdfdfd;
-            border: 1px solid #f0f0f0;
-            cursor: pointer;
-            transition: 0.2s;
+            display: flex; align-items: center; padding: 20px;
+            background: #fdfdfd; border: 1px solid #f0f0f0;
+            cursor: pointer; transition: 0.2s;
         }
-
         .module-item:hover { background: #fff; border-color: #ddd; }
         .module-item input { margin-right: 20px; accent-color: var(--clay); transform: scale(1.3); }
-        
         .module-info { flex: 1; }
         .module-title { display: block; font-family: 'Montserrat'; font-size: 0.85rem; font-weight: 600; }
         .module-desc { font-size: 0.75rem; color: #999; }
 
         .extra-detail {
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.4s ease-out, padding 0.3s ease;
-            background: #fff;
-            border: 1px solid #f0f0f0;
-            border-top: none;
+            max-height: 0; overflow: hidden; transition: 0.4s;
+            background: #fff; border: 1px solid #f0f0f0; border-top: none;
             padding: 0 20px;
         }
 
         .module-group input[type="checkbox"]:checked ~ .extra-detail {
-            max-height: 200px;
-            padding: 20px;
+            max-height: 200px; padding: 20px;
         }
 
         .btn-initialize { 
-            width: 100%; 
-            padding: 25px; 
-            background: var(--dark); 
-            color: white; 
-            border: none; 
-            font-family: 'Montserrat'; 
-            font-weight: 600; 
-            cursor: pointer; 
-            margin-top: 20px; 
-            letter-spacing: 2px; 
-            transition: 0.3s; 
-            text-transform: uppercase;
-            position: relative;
+            width: 100%; padding: 25px; background: var(--dark); 
+            color: white; border: none; font-family: 'Montserrat'; 
+            font-weight: 600; cursor: pointer; margin-top: 40px; 
+            letter-spacing: 2px; transition: 0.3s; text-transform: uppercase;
         }
 
         .btn-initialize:hover:not(:disabled) { background: var(--clay); transform: translateY(-2px); }
+        .btn-initialize:disabled { background: #555; cursor: not-allowed; animation: pulse 1.5s infinite; }
 
-        /* Animation when button is clicked */
-        .btn-initialize:disabled {
-            background: #555;
-            cursor: not-allowed;
-            animation: pulse 1.5s infinite;
-        }
-
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.7; }
-            100% { opacity: 1; }
-        }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
     </style>
 </head>
 <body>
 
+    <div class="guide-box">
+        <div class="guide-header" onclick="toggleGuide()">
+            <span>Construction Guide & Best Practices</span>
+            <span id="guide-icon">↓</span>
+        </div>
+        <div class="guide-content" id="guide-body">
+            <p>1. <strong>Visual Identity:</strong> Upload images to personalize your space. If left empty, our architect will use high-end CSS fallbacks.</p>
+            <p>2. <strong>The Vibe:</strong> This is your direct line to the AI Architect. Describe your shop's mood, colors, and personality in detail.</p>
+            <p>3. <strong>Modules:</strong> Selecting a module adds specialized sections to your site for a more professional experience.</p>
+        </div>
+    </div>
+
     <div class="form-card">
         <span class="step-label">Phase 01 // Configuration</span>
         <h2>Construct Kiosk.</h2>
-
-        <div class="jovial-warning">
-            🇳🇬 <strong>Abeg, use your head!</strong> Your input is the cement and blocks for this shop. <strong>Choose your words carefully.</strong>
-        </div>
         
-        <form id="archForm" action="/kiosk/new" method="POST">
+        <form id="archForm" action="/kiosk/new" method="POST" enctype="multipart/form-data">
+            
+            <div class="section-title">01. Identity</div>
             <div class="field">
                 <label class="main-label">Kiosk Name</label>
                 <input type="text" name="kiosk_name" placeholder="The Brass Thimble" required>
             </div>
 
+            <div class="section-title">02. Visual Assets</div>
             <div class="field">
-                <label class="main-label">Visual Presets</label>
-                <div class="vibe-grid">
-                    <div class="vibe-chip" onclick="setVibe(this, 'Luxury: Gold and Deep Emerald tones, high-end jewelry feel, elegant serif fonts.')">✨ Luxury</div>
-                    <div class="vibe-chip" onclick="setVibe(this, 'Streetwear: Gritty, bold Helvetica, neon accents on black, urban energy.')">🛹 Street</div>
-                    <div class="vibe-chip" onclick="setVibe(this, 'Organic: Earthy browns and greens, soft edges, handmade natural lighting.')">🌿 Organic</div>
-                    <div class="vibe-chip" onclick="setVibe(this, 'Tech: Dark mode, blue glowing borders, sleek futuristic icons.')">💻 Cyber</div>
+                <label class="main-label">Cloudinary Uploads</label>
+                <div class="asset-grid">
+                    <div class="asset-item">
+                        <label>Brand Logo</label>
+                        <input type="file" name="logo_url" accept="image/*">
+                    </div>
+                    <div class="asset-item">
+                        <label>Hero Banner</label>
+                        <input type="file" name="banner_url" accept="image/*">
+                    </div>
+                    <div class="asset-item">
+                        <label>Gallery 01</label>
+                        <input type="file" name="gallery_1" accept="image/*">
+                    </div>
+                    <div class="asset-item">
+                        <label>Gallery 02</label>
+                        <input type="file" name="gallery_2" accept="image/*">
+                    </div>
+                    <div class="asset-item" style="grid-column: span 2;">
+                        <label>Custom Background</label>
+                        <input type="file" name="background_url" accept="image/*">
+                    </div>
                 </div>
             </div>
 
+            <div class="section-title">03. Atmosphere</div>
             <div class="field">
-                <label class="main-label">The Vibe (Refine AI Prompt)</label>
-                <textarea id="vibe-input" name="vibe" placeholder="Describe the atmosphere..." required></textarea>
+                <label class="main-label">Describe The Vibe</label>
+                <textarea id="vibe-input" name="vibe" placeholder="e.g. A minimalist ceramic studio with soft shadows, earthy tones, and elegant serif typography..." required></textarea>
             </div>
 
+            <div class="section-title">04. Architecture</div>
             <div class="field">
-                <label class="main-label">Architecture Modules</label>
-                
                 <div class="module-group">
                     <label class="module-item">
                         <input type="checkbox" name="module_hero">
                         <div class="module-info">
-                            <span class="module-title">Hero Banner</span>
-                            <span class="module-desc">A big welcome message at the top.</span>
+                            <span class="module-title">Hero Banner Section</span>
+                            <span class="module-desc">Dynamic welcome text at the top.</span>
                         </div>
                     </label>
                     <div class="extra-detail">
@@ -236,24 +253,11 @@
                         <input type="checkbox" name="module_faq">
                         <div class="module-info">
                             <span class="module-title">FAQ Section</span>
-                            <span class="module-desc">Answer common questions.</span>
+                            <span class="module-desc">Automated Q&A section.</span>
                         </div>
                     </label>
                     <div class="extra-detail">
-                        <input type="text" name="faq_focus" placeholder="e.g. 'Focus on shipping times'">
-                    </div>
-                </div>
-
-                <div class="module-group">
-                    <label class="module-item">
-                        <input type="checkbox" name="module_reviews">
-                        <div class="module-info">
-                            <span class="module-title">Testimonials</span>
-                            <span class="module-desc">Add customer social proof.</span>
-                        </div>
-                    </label>
-                    <div class="extra-detail">
-                        <input type="text" name="review_style" placeholder="e.g. 'Energetic reviews from customers'">
+                        <input type="text" name="faq_focus" placeholder="e.g. 'Shipping and Returns policy'">
                     </div>
                 </div>
             </div>
@@ -263,13 +267,13 @@
     </div>
 
     <script>
-        function setVibe(el, text) {
-            document.querySelectorAll('.vibe-chip').forEach(chip => chip.classList.remove('selected'));
-            el.classList.add('selected');
-            document.getElementById('vibe-input').value = text;
+        function toggleGuide() {
+            const body = document.getElementById('guide-body');
+            const icon = document.getElementById('guide-icon');
+            body.classList.toggle('open');
+            icon.innerText = body.classList.contains('open') ? '↑' : '↓';
         }
 
-        // Handle button state and unclickability
         document.getElementById('archForm').addEventListener('submit', function() {
             const btn = document.getElementById('submitBtn');
             btn.disabled = true;
