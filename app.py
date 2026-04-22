@@ -477,7 +477,7 @@ def generate_kiosk_architecture(name, vibe, kiosk_id, whatsapp, module_data, ima
         TECHNICAL SPECS:
         1. STYLING: Premium CSS in a <style> block. Use backdrop-filter for glassmorphism headers.mobile friendly
         2. ASSETS: If an asset URL is 'none', use a CSS-only decorative fallback (like a gradient). Do NOT use placeholder.com.
-        3. DATA: Fetch products from '/api/get_products' via POST {{ "kiosk_id": {kiosk_id} }}.The src can be gotten from the fetched data, the key is "image_url"
+        3. DATA: Fetch products from 'https://marketplace-ekhr.onrender.com/api/get_products' via POST {{ "kiosk_id": {kiosk_id} }}.The src can be gotten from the fetched data, the key is "image_url"
         4. CART: Implement a sliding 'Cart Drawer'. Users must be able to adjust quantities and see a subtotal.
         5. CHECKOUT & LEAD CAPTURE: [prices in naira]
         - Build a form for Customer Name and WhatsApp/Phone.
