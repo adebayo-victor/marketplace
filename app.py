@@ -500,25 +500,39 @@ def generate_kiosk_architecture(name, vibe, kiosk_id, whatsapp, module_data, ima
 
 
 
+import hashlib
+from flask import request
+
 @app.route("/<slug>")
 def view_kiosk(slug):
-    # 1. Fetch the rows
+    # 1. Fetch the kiosk details
     rows = db.execute("SELECT * FROM kiosks WHERE slug = ?", slug)
     
-    # 2. Check if the list is empty first 
+    # 2. Check if the kiosk exists
     if not rows or len(rows) == 0:
         return "<h1>404 - Kiosk Not Found</h1><p>The shop you're looking for doesn't exist yet.</p>", 404
         
     kiosk = rows[0]
     
     # 3. Check the lock status
-    # Note: Use '==' or 'not' to ensure we capture the 0/1 integer from SQL
     if kiosk["is_active"] == 0:
         return render_template("locked_site.html", kiosk=kiosk)
 
     # 4. Final safety check: Does generated_html actually have content?
     if not kiosk['generated_html']:
         return "<h1>Site Under Construction</h1><p>The architect is still laying the bricks.</p>", 200
+
+    # --- 🚀 ADD VISITATION COUNT ---
+    # We grab the IP and User Agent to log the visit before returning the HTML
+    user_ip = request.remote_addr or "0.0.0.0"
+    ip_hash = hashlib.sha256(user_ip.encode()).hexdigest() # Hash the IP for security
+    user_agent = request.headers.get('User-Agent', 'Unknown')
+
+    db.execute("""
+        INSERT INTO visitations (kiosks_id, ip_hash, user_agent) 
+        VALUES (?, ?, ?)
+    """, kiosk["id"], ip_hash, user_agent)
+    # -------------------------------
 
     # 5. Return the raw HTML string
     return kiosk["generated_html"]
