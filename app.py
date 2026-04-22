@@ -461,35 +461,34 @@ def generate_kiosk_architecture(name, vibe, kiosk_id, whatsapp, module_data, ima
     if module_data.get('reviews'):
         extra_specs += f"- REVIEWS: Style them as: '{module_data['reviews']}'.\n"
     
-    prompt = f"""
-        Act as a Senior Full-Stack Web Designer. Build a single-file HTML storefront for '{name}'.
+    prompt = f"""Act as a Senior Full-Stack Web Designer. Build a single-file HTML storefront for '{name}'.
         VIBE: {vibe}
-        
+
         {visual_specs}
-        
+
         ARCHITECTURE REQUIREMENTS:
         {extra_specs if extra_specs else "- Standard Product Grid only."}
         - DESIGN STYLE: Figma-inspired. Use 8px grid spacing, soft shadows (rgba 0,0,0,0.05), and Plus Jakarta Sans.
         - DYNAMICITY: Implement skeleton loaders (shimmer effect) while fetching data. Use a JS 'state' object to manage the UI.
         - ANIMATION STRATEGY: Select the most appropriate motion style from this list to match the vibe: 
         [Micro-Interactions, Cinematic Scrollytelling, Kinetic Typography, 3D Immersion (CSS-based), Organic Fluidity, or Neo-Brutalism].
-        
+
         TECHNICAL SPECS:
-        1. STYLING: Premium CSS in a <style> block. Use backdrop-filter for glassmorphism headers.mobile friendly
+        1. STYLING: Premium CSS in a <style> block. Use backdrop-filter for glassmorphism headers. mobile friendly.
         2. ASSETS: If an asset URL is 'none', use a CSS-only decorative fallback (like a gradient). Do NOT use placeholder.com.
-        3. DATA: Fetch products from 'https://marketplace-ekhr.onrender.com/api/get_products' via POST {{ "kiosk_id": {kiosk_id} }}.The src can be gotten from the fetched data, the key is "image_url"
+        3. DATA: Fetch products from 'https://marketplace-ekhr.onrender.com/api/get_products' via POST {{ "kiosk_id": {kiosk_id} }}. The src can be gotten from the fetched data, the key is "image_url".
         4. CART: Implement a sliding 'Cart Drawer'. Users must be able to adjust quantities and see a subtotal.
         5. CHECKOUT & LEAD CAPTURE: [prices in naira]
         - Build a form for Customer Name and WhatsApp/Phone.
+        - AD INTEGRATION: Inside the checkout/order form section, include a visible ad banner using this URL: https://res.cloudinary.com/dgdrith1o/image/upload/v1776858123/Gemini_Generated_Image_6bw7v46bw7v46bw7_xbt101.png.
         - DISCREET ACTION: When the form is submitted, first send a background POST request to '/api/capture_lead' with {{ "kiosk_id": {kiosk_id}, "name": name, "phone": phone }}. 
         - DO NOT wait for this request to finish before proceeding to the WhatsApp redirect.
-        6. WHATSAPP BRIDGE: After lead capture, redirect to: https://wa.me/{whatsapp}?text=... (Include Name, Itemized List, and Total).
+        6. WHATSAPP BRIDGE: After lead capture, redirect to: https://wa.me/{whatsapp}?text=... (Include Name, Itemized List, Total, and the link to the order form at {{ url_for('order_form', merchant_slug=merchant.slug) }}).
         7. LOGIC: Use standard 'if/else' statements. **DO NOT use ternary operators (?:)** in the code.
-        8. Ensure the background is visible, but the styling remains unaffected
-        9.Add a dark/light theme toggle
-        10.Footnote: Marketplace project, powered by  techlite.
-        Return ONLY raw HTML/CSS/JS. No markdown, no preamble.
-    """
+        8. Ensure the background is visible, but the styling remains unaffected.
+        9. Add a dark/light theme toggle.
+        10. Footnote: Marketplace project, powered by techlite.
+        Return ONLY raw HTML/CSS/JS. No markdown, no preamble."""
     
     try:
         response = model.generate_content(prompt)
