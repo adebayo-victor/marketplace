@@ -1,7 +1,6 @@
 from flask import Flask, render_template, jsonify, request, redirect, session, render_template_string, url_for
 from cs50 import SQL
 import re
-import re
 from werkzeug.security import generate_password_hash
 from werkzeug.security import check_password_hash
 import os
@@ -19,6 +18,7 @@ import base64
 import io
 import cloudinary
 import cloudinary.uploader
+
 # Load the key from a .env file
 load_dotenv()
 #paystack key
@@ -71,7 +71,7 @@ def extract_public_id(url):
             return "/".join(parts[i+1:]).split('.')[0]
     return None
 
-import cloudinary.uploader
+
 
 def delete_cloudinary_image(public_id):
     """
@@ -158,7 +158,7 @@ def login():
         # Establish Global Session
         session["merchant_id"] = user[0]["id"]
         session["merchant_name"] = user[0]["name"]
-        
+        session["merchant_phone"] = user[0]["whatsapp_number"]
         # Take them to their central command
         return redirect("/dashboard")
 
@@ -351,9 +351,7 @@ def edit_product(slug, product_id):
 
 
 
-import random
-import string
-from flask import request, session, redirect, render_template, jsonify
+
 
 @app.route("/kiosk/new", methods=["GET", "POST"])
 def new_kiosk():
