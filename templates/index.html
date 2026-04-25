@@ -13,7 +13,6 @@
             --cream: #f9f5f0; 
             --dark-oak: #2d1e14;
             --sand-glass: rgba(249, 245, 240, 0.95);
-            --icon-tint: rgba(141, 91, 62, 0.12); 
             --shadow: 0 10px 30px rgba(0,0,0,0.05);
         }
 
@@ -106,16 +105,7 @@
             transition: transform 0.5s ease;
         }
 
-        .ad-container:hover {
-            transform: scale(1.01);
-        }
-
-        .ad-image {
-            width: 100%;
-            height: auto;
-            display: block;
-            object-fit: cover;
-        }
+        .ad-image { width: 100%; height: auto; display: block; object-fit: cover; }
 
         /* --- FLOOR & GRID --- */
         .market-floor { padding: 80px 8%; }
@@ -133,13 +123,32 @@
             color: inherit;
             border-radius: 8px;
             overflow: hidden;
-            transition: 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+            transition: 0.4s;
             box-shadow: var(--shadow);
         }
         
-        .kiosk-card:hover { 
-            transform: translateY(-8px); 
-            box-shadow: 0 20px 40px rgba(141, 91, 62, 0.15); 
+        .kiosk-card:hover { transform: translateY(-8px); }
+
+        .btn-kiosk {
+            display: inline-block;
+            padding: 18px 40px;
+            background: var(--dark-oak);
+            color: white;
+            text-decoration: none;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 600;
+            font-size: 0.8rem;
+            letter-spacing: 1px;
+            transition: 0.3s;
+            border-radius: 4px;
+        }
+
+        .btn-kiosk:hover { background: var(--clay); transform: translateY(-3px); }
+
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--dark-oak);
+            color: var(--dark-oak);
         }
 
         /* --- GINGER ZONE --- */
@@ -149,20 +158,6 @@
             color: var(--cream);
             text-align: center;
             position: relative;
-        }
-
-        .chocho-badge {
-            position: absolute;
-            top: -20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: var(--clay);
-            color: white;
-            padding: 10px 25px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            border-radius: 50px;
         }
 
         .btn-whatsapp {
@@ -178,11 +173,8 @@
             font-size: 0.8rem;
         }
 
-        .btn-whatsapp:hover { background: var(--clay); color: white; }
-
         @media (max-width: 768px) {
             .hero { padding-top: 120px; }
-            .hero-overlay { padding: 30px; }
             .market-floor { padding: 60px 5%; }
         }
     </style>
@@ -226,6 +218,11 @@
                 </div>
             </a>
             {% endfor %}
+        </div>
+
+        <div style="text-align: center; margin-top: 60px; display: flex; flex-wrap: wrap; justify-content: center; gap: 20px;">
+            <a href="/register" class="btn-kiosk">REGISTER AS MERCHANT</a>
+            <a href="/login" class="btn-kiosk btn-outline">CHECK OUT MY KIOSK</a>
         </div>
     </section>
 
