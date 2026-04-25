@@ -852,5 +852,29 @@ def update_kiosk_gen_html(id):
     # Update the generated_html column for this specific kiosk
     db.execute("UPDATE kiosks SET generated_html = ? WHERE id = ?", (new_html, id))
     return redirect(url_for('db_explorer', view='kiosks'))
+
+@app.route("/overlord/leaderboard")
+def leaderboard():
+    # 1. Fetch Leaderboard Rankings
+    kiosks = db.execute("""
+        SELECT 
+            k.id, k.kiosk_name, k.slug, 
+            m.name as merchant_name,
+            COUNT(l.id) as lead_count
+        FROM kiosks k
+        JOIN merchants m ON k.merchant_id = m.id
+        LEFT JOIN leads l ON k.id = l.kiosks_id
+        GROUP BY k.id, m.name
+        ORDER BY lead_count DESC
+    """)
+
+    # 2. Fetch All Lead Details for these kiosks
+    all_leads = db.execute("""
+        SELECT kiosks_id, customer_name, whatsapp_number, captured_at 
+        FROM leads 
+        ORDER BY captured_at DESC
+    """)
+
+    return render_template("leaderboard.html", kiosks=kiosks, all_leads=all_leads)
 if __name__ == "__main__":
     app.run(port=2000, host="0.0.0.0")

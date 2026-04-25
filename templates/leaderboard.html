@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Overlord // Performance & Leads</title>
+    <style>
+        /* ... keeping your existing CSS variables ... */
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;600&display=swap');
+        :root { --clay: #8d5b3e; --bg: #f9f5f0; --surface: #ffffff; --text: #2d1e14; --border: #e0d7cf; }
+        
+        body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Montserrat', sans-serif; display: flex; height: 100vh; overflow: hidden; }
+        nav { width: 260px; background: var(--surface); border-right: 1px solid var(--border); padding: 30px 0; display: flex; flex-direction: column; }
+        .nav-brand { padding: 0 30px 20px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: var(--clay); border-bottom: 1px solid var(--border); margin-bottom: 20px; }
+        nav a { display: block; padding: 12px 30px; color: #666; text-decoration: none; font-size: 0.8rem; }
+        nav a.active { background: var(--bg); color: var(--text); font-weight: 600; border-right: 4px solid var(--clay); }
+
+        main { flex: 1; padding: 40px; overflow-y: auto; }
+        .rank-card { 
+            background: var(--surface); border: 1px solid var(--border); 
+            margin-bottom: 15px; cursor: pointer; transition: 0.3s; overflow: hidden;
+        }
+        .card-header { padding: 20px 30px; display: flex; align-items: center; position: relative; }
+        
+        .rank-num { font-size: 1.2rem; font-weight: 600; width: 40px; color: var(--clay); }
+        .info { flex: 1; }
+        .metrics { text-align: right; }
+        
+        /* Leads Drawer */
+        .leads-drawer { 
+            max-height: 0; overflow: hidden; transition: max-height 0.4s ease; 
+            background: #fcfaf8; border-top: 0px solid var(--border);
+        }
+        .rank-card.active .leads-drawer { max-height: 500px; border-top: 1px solid var(--border); overflow-y: auto; }
+        
+        table { width: 100%; border-collapse: collapse; font-size: 0.7rem; }
+        th { text-align: left; padding: 12px 30px; background: #f4eee9; color: var(--clay); text-transform: uppercase; }
+        td { padding: 10px 30px; border-bottom: 1px solid #eee; }
+        
+        .badge-count { background: var(--clay); color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.6rem; }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <div class="nav-brand">Overlord.</div>
+        <a href="/overlord/explorer/merchants">Merchants</a>
+        <a href="/overlord/explorer/kiosks">All Kiosks</a>
+        <a href="/overlord/leaderboard" class="active">Leaderboard</a>
+    </nav>
+
+    <main>
+        <h1>Performance Registry.</h1>
+        
+        <div class="leaderboard-list">
+            {% for k in kiosks %}
+            <div class="rank-card" onclick="this.classList.toggle('active')">
+                <div class="card-header">
+                    <div class="rank-num">#{{ loop.index }}</div>
+                    <div class="info">
+                        <div style="font-size:0.6rem; color:var(--clay); font-weight:600;">{{ k.merchant_name }}</div>
+                        <div style="font-weight:600;">{{ k.kiosk_name }}</div>
+                    </div>
+                    <div class="metrics">
+                        <span style="font-size: 1.2rem; font-weight: 600;">{{ k.lead_count }}</span>
+                        <div style="font-size: 0.5rem; color: #888;">TOTAL LEADS</div>
+                    </div>
+                </div>
+
+                <div class="leads-drawer">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>WhatsApp</th>
+                                <th>Captured At</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for lead in all_leads if lead.kiosks_id == k.id %}
+                            <tr>
+                                <td>{{ lead.customer_name or 'Anonymous' }}</td>
+                                <td style="font-family: monospace; color: var(--clay);">{{ lead.whatsapp_number }}</td>
+                                <td style="color: #999;">{{ lead.captured_at }}</td>
+                            </tr>
+                            {% else %}
+                            <tr><td colspan="3" style="text-align:center; padding:20px;">No lead data available.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </main>
+
+</body>
+</html>

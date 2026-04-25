@@ -165,15 +165,5 @@ if __name__ == "__main__":
 #print(db.execute("UPDATE kiosks SET is_active = 1 WHERE kiosk_name = 'Otaku fashion corner '"))
 #print(db.execute("SELECT kiosk_name, is_active FROM kiosks"))
 
-try:
-    db.execute("""
-        ALTER TABLE kiosks 
-        ADD COLUMN logo_url TEXT,
-        ADD COLUMN banner_url TEXT,
-        ADD COLUMN gallery_1 TEXT,
-        ADD COLUMN gallery_2 TEXT,
-        ADD COLUMN background_url TEXT
-    """)
-    print("Kiosk expanded to 5 visual slots! ✅")
-except Exception as e:
-    print(f"Migration check: {e}")
+print(db.execute("DELETE FROM leads WHERE customer_name = ?", "Vicade"))
+
