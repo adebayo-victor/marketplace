@@ -489,7 +489,6 @@ def generate_kiosk_architecture(name, vibe, kiosk_id, whatsapp, module_data, ima
         4. CART: Implement a sliding 'Cart Drawer'. Users must be able to adjust quantities and see a subtotal.
         5. CHECKOUT & LEAD CAPTURE: [prices in naira]
         - Build a form for Customer Name and WhatsApp/Phone.
-        - AD INTEGRATION: Inside the checkout/order form section, include a visible ad banner using this URL: https://res.cloudinary.com/dgdrith1o/image/upload/v1776858123/Gemini_Generated_Image_6bw7v46bw7v46bw7_xbt101.png.
         - DISCREET ACTION: When the form is submitted, first send a background POST request to '/api/capture_lead' with {{ "kiosk_id": {kiosk_id}, "name": name, "phone": phone }}. 
         - DO NOT wait for this request to finish before proceeding to the WhatsApp redirect.
         6. WHATSAPP BRIDGE: After lead capture, redirect to: https://wa.me/{whatsapp}?text=... (Include Name, Itemized List, Total, and the link to the order form at {{ url_for('order_form', merchant_slug=merchant.slug) }}).
