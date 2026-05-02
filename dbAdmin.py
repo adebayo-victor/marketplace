@@ -12,6 +12,7 @@ db.execute("""
     CREATE TABLE IF NOT EXISTS merchants (
         id SERIAL PRIMARY KEY,
         name TEXT NOT NULL,
+        email TEXT UNIQUE,
         slug TEXT NOT NULL UNIQUE,
         whatsapp_number TEXT NOT NULL,
         password TEXT NOT NULL,
@@ -111,6 +112,19 @@ db.execute("""
     )
 """)
 
+8. Premium merchants table
+#For merchants that pay
+db.execute("""
+    CREATE TABLE IF NOT EXISTS premium_merchants (
+        id SERIAL PRIMARY KEY,
+        merchant_id INTEGER NOT NULL,
+        amount REAL DEFAULT 3000.0,
+        payment_ref TEXT UNIQUE NOT NULL,
+        is_active INTEGER DEFAULT 1,
+        paid_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (merchant_id) REFERENCES merchants(id) ON DELETE CASCADE
+    )
+""")
 print("Cloud Database checked/initialized successfully. ✅")'''
 
 # --- SEEDER SECTION ---
@@ -179,5 +193,11 @@ if __name__ == "__main__":
 #print(db.execute("SELECT kiosk_name, is_active FROM kiosks"))
 
 # Add Category column to Kiosks
-print(db.execute("SELECT category FROM merchants"))
+
+
+
+if created:
+    print("email added ✔")
+else:
+    print(f"something happened; {created}")
 

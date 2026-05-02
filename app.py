@@ -929,5 +929,110 @@ def register_and_recommend():
 
     return {"status": "success"}, 200
 
+
+
+@app.route("/merchant/premium", methods=["GET", "POST"])
+def merchant_premium():
+    merchant_id = session.get("merchant_id")
+
+    if request.method == "POST":
+        action = request.form.get("action")
+
+        # Step 1: Login & Verify Password
+        if action == "login":
+            whatsapp = request.form.get("whatsapp").strip()
+            password = request.form.get("password")
+            print(whatsapp)
+            print(password)
+            merchant = db.execute("SELECT * FROM merchants WHERE whatsapp_number = ?", whatsapp)
+            if merchant and password == merchant[0]['password']:
+                session["merchant_id"] = merchant[0]["id"]
+                return redirect("/merchant/premium")
+            else:
+                return "Invalid credentials. <a href='/merchant/premium'>Try again</a>", 401
+
+        # Step 2: Save Email
+        if action == "update_email":
+            email = request.form.get("email").strip()
+            db.execute("UPDATE merchants SET email = ? WHERE id = ?", email, merchant_id)
+            return redirect("/merchant/premium")
+
+        # Step 3: Go Back / Reset Logic
+        if action == "change_email":
+            db.execute("UPDATE merchants SET email = NULL WHERE id = ?", merchant_id)
+            return redirect("/merchant/premium")
+            
+        if action == "switch_account":
+            session.pop("merchant_id", None)
+            return redirect("/merchant/premium")
+
+    # Fetch merchant data for the UI
+    merchant = None
+    if merchant_id:
+        merchant = db.execute("SELECT * FROM merchants WHERE id = ?", merchant_id)[0]
+
+    return render_template("premium.html", merchant=merchant)
+
+PAYSTACK_SECRET = os.environ.get("PAYSTACK_KEY")
+
+
+@app.route("/merchant/upgrade", methods=["POST"])
+def upgrade():
+    merchant_id = session.get("merchant_id")
+    row = db.execute("SELECT email, whatsapp_number FROM merchants WHERE id = ?", merchant_id)[0]
+
+    # 1. Clean the email
+    raw_email = row["email"] if row["email"] else f"{row['whatsapp_number']}@market.techlite"
+    # Strip any spaces that might be in the phone number
+    email_for_paystack = raw_email.replace(" ", "").strip()
+
+    # 2. Force Integer for Kobo (3000 * 100)
+    amount_in_kobo = int(3000 * 100)
+
+    url = "https://api.paystack.co/transaction/initialize"
+    headers = {
+        "Authorization": f"Bearer {PAYSTACK_SECRET}",
+        "Content-Type": "application/json"
+    }
+    
+    payload = {
+        "email": email_for_paystack,
+        "amount": amount_in_kobo,
+        "callback_url": url_for('payment_callback', _external=True)
+    }
+
+    response = requests.post(url, json=payload, headers=headers)
+    res_data = response.json()
+
+    if response.status_code != 200:
+        # This will show you EXACTLY why Paystack is angry in your console
+        print(f"PAYSTACK ERROR: {res_data.get('message')}")
+        return f"Paystack Error: {res_data.get('message')}", 400
+
+    return redirect(res_data["data"]["authorization_url"])
+
+@app.route("/payment/callback")
+def payment_callback():
+    reference = request.args.get('reference')
+    
+    # Verify the payment
+    url = f"https://api.paystack.co/transaction/verify/{reference}"
+    headers = {"Authorization": f"Bearer {PAYSTACK_SECRET}"}
+    response = requests.get(url, headers=headers).json()
+    
+    if response["status"] and response["data"]["status"] == "success":
+        # Merchant paid! Update the DB
+        merchant_email = response["data"]["customer"]["email"]
+        merchant = db.execute("SELECT id FROM merchants WHERE email = ?", merchant_email)[0]
+        
+        db.execute("""
+            INSERT INTO premium_merchants (merchant_id, payment_ref) 
+            VALUES (?, ?)
+        """, merchant["id"], reference)
+        
+        return redirect("/dashboard?status=premium_active")
+    
+    return "Payment failed or was cancelled.", 400
+
 if __name__ == "__main__":
     app.run(port=2000, host="0.0.0.0")

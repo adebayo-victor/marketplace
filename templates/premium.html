@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Techlite Elite | Premium Upgrade</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --gold: #D4AF37;
+            --gold-dim: #b8952e;
+            --bg: #f4f4f2; /* Marketplace Light Theme Bg */
+            --surface: #ffffff;
+            --text-primary: #1a1a1a;
+            --text-secondary: #666;
+            --border: #e0e0e0;
+            --dark-accent: #2C1B0E;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text-primary);
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px;
+        }
+
+        .card {
+            width: 100%; max-width: 400px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+
+        .hero { background: var(--dark-accent); padding: 30px; color: white; text-align: center; }
+        .logo-text { font-size: 20px; font-weight: 700; color: var(--gold); letter-spacing: 1px; }
+        
+        .body { padding: 30px; }
+        .field-label { font-size: 11px; color: var(--text-secondary); margin-bottom: 6px; font-weight: 700; text-transform: uppercase; }
+
+        input {
+            width: 100%; padding: 14px; background: #fff;
+            border: 1px solid var(--border); border-radius: 10px;
+            margin-bottom: 15px; font-size: 14px; outline: none; transition: 0.2s;
+        }
+        input:focus { border-color: var(--gold); }
+
+        .btn {
+            width: 100%; background: var(--gold); color: #fff;
+            border: none; border-radius: 10px; padding: 16px;
+            font-size: 15px; font-weight: 700; cursor: pointer;
+            transition: 0.2s; text-transform: uppercase;
+        }
+        .btn:hover { background: var(--gold-dim); transform: translateY(-1px); }
+
+        .summary-box {
+            background: #fafaf9; border: 1px dashed var(--gold);
+            padding: 15px; border-radius: 12px; margin-bottom: 20px; text-align: left;
+        }
+
+        .back-link {
+            background: none; border: none; color: var(--gold); font-size: 12px;
+            cursor: pointer; text-decoration: underline; padding: 0; margin-top: 5px;
+        }
+
+        .price-num { font-size: 42px; font-weight: 800; color: var(--dark-accent); margin: 5px 0; }
+    </style>
+</head>
+<body>
+    <div class="card">
+
+        {% if not merchant %}
+        <div class="hero">
+            <div class="logo-text">TECHLITE ELITE</div>
+            <p style="font-size: 13px; opacity: 0.8; margin-top: 8px;">Login to your merchant account</p>
+        </div>
+        <div class="body">
+            <form method="POST">
+                <input type="hidden" name="action" value="login">
+                <p class="field-label">WhatsApp Number</p>
+                <input type="text" name="whatsapp" placeholder="080XXXXXXXX" required>
+                <p class="field-label">Password</p>
+                <input type="password" name="password" placeholder="••••••••" required style="width: 100%; padding: 14px; border: 1px solid var(--border); border-radius: 10px; margin-bottom: 15px;">
+                <button type="submit" class="btn">Verify Merchant</button>
+            </form>
+        </div>
+
+        {% elif not merchant.email %}
+        <div class="hero">
+            <div class="logo-text">BILLING INFO</div>
+        </div>
+        <div class="body">
+            <p style="font-size: 14px; margin-bottom: 15px;">Welcome, <b>{{ merchant.name }}</b></p>
+            <form method="POST">
+                <input type="hidden" name="action" value="update_email">
+                <p class="field-label">Receipt Email Address</p>
+                <input type="email" name="email" placeholder="you@example.com" required>
+                <button type="submit" class="btn">Confirm Email</button>
+            </form>
+            <form method="POST" style="margin-top: 15px; text-align: center;">
+                <input type="hidden" name="action" value="switch_account">
+                <button type="submit" class="back-link" style="color: var(--text-secondary);">Not you? Switch account</button>
+            </form>
+        </div>
+
+        {% else %}
+        <div class="hero">
+            <div class="logo-text">PREMIUM UPGRADE</div>
+        </div>
+        <div class="body" style="text-align: center;">
+            <div class="summary-box">
+                <p style="font-size: 10px; color: var(--text-secondary);">UPGRADING ACCOUNT:</p>
+                <p style="font-size: 14px; font-weight: 700;">{{ merchant.name }}</p>
+                <p style="font-size: 13px; color: var(--text-secondary);">{{ merchant.email }}</p>
+                <form method="POST">
+                    <input type="hidden" name="action" value="change_email">
+                    <button type="submit" class="back-link">Change email details</button>
+                </form>
+            </div>
+
+            <p style="font-size: 12px; color: var(--text-secondary);">LIFETIME ACCESS</p>
+            <div class="price-num">₦3,000</div>
+            
+            <form action="/merchant/upgrade" method="POST" style="margin-top: 20px;">
+                <button type="submit" class="btn">Pay ₦3,000 Now</button>
+            </form>
+
+            <form method="POST" style="margin-top: 20px;">
+                <input type="hidden" name="action" value="switch_account">
+                <button type="submit" class="back-link" style="color: var(--text-secondary); text-decoration: none;">← Logout of this account</button>
+            </form>
+        </div>
+        {% endif %}
+
+    </div>
+</body>
+</html>
