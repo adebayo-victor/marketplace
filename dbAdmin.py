@@ -98,6 +98,19 @@ db.execute("""
     )
 """)
 
+7.Customers table
+# Clean customer table for registration only
+db.execute("""
+    CREATE TABLE IF NOT EXISTS customers (
+        id SERIAL PRIMARY KEY,
+        full_name TEXT NOT NULL,
+        customer_ref_id TEXT NOT NULL UNIQUE,
+        email TEXT NOT NULL UNIQUE,
+        password TEXT NOT NULL,
+        registered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+""")
+
 print("Cloud Database checked/initialized successfully. ✅")'''
 
 # --- SEEDER SECTION ---
@@ -165,5 +178,6 @@ if __name__ == "__main__":
 #print(db.execute("UPDATE kiosks SET is_active = 1 WHERE kiosk_name = 'Otaku fashion corner '"))
 #print(db.execute("SELECT kiosk_name, is_active FROM kiosks"))
 
-print(db.execute("DELETE FROM leads WHERE customer_name = ?", "Vicade"))
+# Add Category column to Kiosks
+print(db.execute("SELECT category FROM merchants"))
 

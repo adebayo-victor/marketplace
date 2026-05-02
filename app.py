@@ -182,6 +182,15 @@ def dashboard():
 
     return render_template("dashboard.html", kiosks=kiosks)
 
+@app.route("/merchant/set_category", methods=["POST"])
+def set_category():
+    category = request.form.get("category")
+    merchant_id = session.get("merchant_id")
+    if category and merchant_id:
+        db.execute("UPDATE merchants SET category = ? WHERE id = ?", category, merchant_id)
+        return {"status": "success"}, 200
+    return {"status": "error"}, 400
+
 @app.route("/<slug>/manage")
 def manage_kiosk(slug):
     if "merchant_id" not in session:
@@ -876,5 +885,50 @@ def leaderboard():
     """)
 
     return render_template("leaderboard.html", kiosks=kiosks, all_leads=all_leads)
+
+@app.route("/marketplace/forbes")
+def forbes():
+    return render_template("recommend.html")
+
+@app.route("/marketplace/recommend", methods=["POST"])
+def register_and_recommend():
+    full_name = request.form.get("full_name")
+    ref_id = request.form.get("customer_ref_id")
+    email = request.form.get("email")
+    password = request.form.get("password")
+    merchant_id = request.form.get("merchant_id")
+    category = request.form.get("category")
+
+    # 1. Find or Create Customer
+    user = db.execute("SELECT * FROM customers WHERE email = ?", email)
+    
+    if not user:
+        # Register them on the fly
+        hashed_pw = generate_password_hash(password)
+        db.execute("""
+            INSERT INTO customers (full_name, customer_ref_id, email, password) 
+            VALUES (?, ?, ?, ?)
+        """, full_name, ref_id, email, hashed_pw)
+        customer_id = db.execute("SELECT last_insert_rowid()")[0][0]
+    else:
+        # Verify existing user
+        if not check_password_hash(user[0]['password'], password):
+            return {"status": "error", "message": "Incorrect password for this email."}, 401
+        customer_id = user[0]['id']
+
+    # 2. Prevent duplicate votes
+    existing = db.execute("SELECT id FROM merchant_recommendations WHERE customer_id = ? AND merchant_id = ?", 
+                          customer_id, merchant_id)
+    if existing:
+        return {"status": "error", "message": "You have already endorsed this merchant."}, 400
+
+    # 3. Log the Endorsement
+    db.execute("""
+        INSERT INTO merchant_recommendations (customer_id, merchant_id, category) 
+        VALUES (?, ?, ?)
+    """, customer_id, merchant_id, category)
+
+    return {"status": "success"}, 200
+
 if __name__ == "__main__":
     app.run(port=2000, host="0.0.0.0")

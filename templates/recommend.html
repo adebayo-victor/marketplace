@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Marketplace // Endorse</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;600&display=swap');
+        :root { --clay: #8d5b3e; --cream: #f9f5f0; --dark-oak: #2d1e14; }
+        
+        body { background: var(--cream); color: var(--dark-oak); font-family: 'Georgia', serif; margin: 0; }
+        .container { padding: 60px 5%; max-width: 500px; margin: 0 auto; }
+        .welcome-header { margin-bottom: 40px; text-align: center; }
+        .welcome-header h1 { font-family: 'Montserrat'; font-size: 2.2rem; text-transform: lowercase; margin: 0; letter-spacing: -1px; }
+
+        .kiosk-card { background: white; padding: 40px; border-top: 5px solid var(--clay); box-shadow: 0 10px 30px rgba(0,0,0,0.03); }
+        
+        label { display: block; font-family: 'Montserrat'; font-size: 0.6rem; text-transform: uppercase; letter-spacing: 1px; color: var(--clay); margin-bottom: 8px; font-weight: 600; }
+        input, select { width: 100%; padding: 12px; border: 1px solid #eee; font-family: 'Montserrat'; font-size: 0.8rem; margin-bottom: 20px; box-sizing: border-box; }
+
+        #search-results { border: 1px solid #eee; background: white; position: absolute; width: 100%; z-index: 10; max-height: 150px; overflow-y: auto; display: none; margin-top: -20px; }
+        .result-item { padding: 10px; font-family: 'Montserrat'; font-size: 0.75rem; cursor: pointer; border-bottom: 1px solid #f9f9f9; }
+        .result-item:hover { background: var(--cream); }
+
+        .btn-action { width: 100%; background: var(--dark-oak); color: white; padding: 18px; border: none; font-family: 'Montserrat'; font-weight: 600; font-size: 0.8rem; cursor: pointer; letter-spacing: 1px; transition: 0.3s; }
+        .btn-action:hover { background: var(--clay); }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="welcome-header">
+            <h1>Register & Endorse.</h1>
+            <p style="font-style: italic; opacity: 0.6; font-size: 0.9rem;">Join the registry to back your merchant.</p>
+        </div>
+
+        <div class="kiosk-card">
+            <form id="recForm">
+                <label>Merchant Category</label>
+                <select id="category">
+                    <option value="Electronics">Electronics</option>
+                    <option value="Fashion">Fashion</option>
+                    <option value="Food">Food & Drinks</option>
+                </select>
+
+                <label>Search Merchant</label>
+                <div style="position: relative;">
+                    <input type="text" id="merchantSearch" placeholder="Type name..." autocomplete="off">
+                    <div id="search-results"></div>
+                </div>
+                <input type="hidden" id="selectedMerchantId">
+
+                <div style="border-top: 1px solid #f4f4f4; margin: 20px 0; padding-top: 20px;">
+                    <label>Your Full Name</label>
+                    <input type="text" id="full_name" placeholder="John Doe" required>
+
+                    <label>Reference ID (Matric No)</label>
+                    <input type="text" id="customer_ref_id" placeholder="REF-001" required>
+
+                    <label>Email Address</label>
+                    <input type="email" id="email" placeholder="email@example.com" required>
+
+                    <label>Set/Enter Password</label>
+                    <input type="password" id="password" placeholder="••••••••" required>
+                </div>
+
+                <button type="button" class="btn-action" onclick="submitFlow()">REGISTER & RECOMMEND</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const searchInput = document.getElementById('merchantSearch');
+        const resultsDiv = document.getElementById('search-results');
+
+        searchInput.addEventListener('input', function() {
+            if (this.value.length < 2) { resultsDiv.style.display = 'none'; return; }
+            resultsDiv.innerHTML = `<div class="result-item" onclick="selectM(1, 'Sample Merchant')">Sample Merchant</div>`;
+            resultsDiv.style.display = 'block';
+        });
+
+        function selectM(id, name) {
+            document.getElementById('selectedMerchantId').value = id;
+            searchInput.value = name;
+            resultsDiv.style.display = 'none';
+        }
+
+        function submitFlow() {
+            const formData = new FormData();
+            formData.append('full_name', document.getElementById('full_name').value);
+            formData.append('customer_ref_id', document.getElementById('customer_ref_id').value);
+            formData.append('email', document.getElementById('email').value);
+            formData.append('password', document.getElementById('password').value);
+            formData.append('merchant_id', document.getElementById('selectedMerchantId').value);
+            formData.append('category', document.getElementById('category').value);
+
+            fetch('/recommend', { method: 'POST', body: formData })
+            .then(res => res.json())
+            .then(data => {
+                if(data.status === 'success') {
+                    alert('SUCCESS: Registered and Endorsed.');
+                    window.location.href = '/marketplace/forbes';
+                } else {
+                    alert('ERROR: ' + data.message);
+                }
+            });
+        }
+    </script>
+</body>
+</html>
