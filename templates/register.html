@@ -2,153 +2,137 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Marketplace // Recommendation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Merchant Enrollment // Marketplace</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;600&display=swap');
-        :root { --clay: #8d5b3e; --cream: #f9f5f0; --dark-oak: #2d1e14; }
         
-        body { background: var(--cream); color: var(--dark-oak); font-family: 'Georgia', serif; margin: 0; }
-        
-        .nav-bar {
-            background: white; padding: 20px 5%; display: flex; 
-            justify-content: space-between; align-items: center;
-            border-bottom: 1px solid #eee;
+        :root {
+            --clay: #8d5b3e; 
+            --cream: #f9f5f0; 
+            --dark-oak: #2d1e14;
         }
 
-        .container { padding: 60px 5%; max-width: 600px; margin: 0 auto; }
-
-        .welcome-header { margin-bottom: 50px; text-align: center; }
-        .welcome-header h1 { 
-            font-family: 'Montserrat'; font-size: 2.5rem; text-transform: lowercase; 
-            margin: 0; letter-spacing: -1px; 
+        body {
+            background: var(--cream);
+            color: var(--dark-oak);
+            font-family: 'Georgia', serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
         }
 
-        .kiosk-card {
-            background: white; padding: 40px; position: relative;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.03);
-            border-top: 5px solid var(--clay);
+        .auth-container {
+            background: white;
+            padding: 60px;
+            width: 100%;
+            max-width: 450px;
+            border-top: 8px solid var(--clay);
+            box-shadow: 0 30px 60px rgba(0,0,0,0.05);
         }
 
-        label { 
-            display: block; font-family: 'Montserrat'; font-size: 0.6rem; 
-            text-transform: uppercase; letter-spacing: 1px; color: var(--clay); 
-            margin-bottom: 10px; font-weight: 600;
-        }
-        
-        input, select {
-            width: 100%; padding: 15px; border: 1px solid #eee; 
-            font-family: 'Montserrat'; font-size: 0.8rem; margin-bottom: 25px;
-            box-sizing: border-box; background: white;
+        h2 {
+            font-family: 'Montserrat', sans-serif;
+            text-transform: lowercase;
+            font-size: 2.2rem;
+            margin-bottom: 10px;
+            letter-spacing: -1px;
         }
 
-        #search-results {
-            border: 1px solid #eee; background: white; 
-            position: absolute; width: 100%; z-index: 10;
-            max-height: 150px; overflow-y: auto; display: none;
-            margin-top: -25px;
+        p.subtitle {
+            font-size: 0.85rem;
+            color: #888;
+            margin-bottom: 40px;
+            font-style: italic;
         }
-        
-        .result-item {
-            padding: 12px; font-family: 'Montserrat'; font-size: 0.75rem;
-            cursor: pointer; border-bottom: 1px solid #f9f9f9;
-        }
-        .result-item:hover { background: var(--cream); color: var(--clay); }
 
-        .btn-add-kiosk {
-            display: block; width: 100%; background: var(--dark-oak); color: white;
-            padding: 18px; text-decoration: none; font-family: 'Montserrat';
-            font-weight: 600; font-size: 0.8rem; border: none; cursor: pointer;
-            text-align: center; letter-spacing: 1px; transition: 0.3s;
+        .form-group {
+            margin-bottom: 25px;
         }
-        .btn-add-kiosk:hover { background: var(--clay); }
+
+        label {
+            display: block;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--clay);
+            margin-bottom: 8px;
+        }
+
+        input {
+            width: 100%;
+            padding: 15px 0;
+            border: none;
+            border-bottom: 1px solid #ddd;
+            font-family: 'Georgia', serif;
+            font-size: 1.1rem;
+            outline: none;
+            background: transparent;
+            transition: border-color 0.3s;
+        }
+
+        input:focus {
+            border-bottom-color: var(--clay);
+        }
+
+        .btn-submit {
+            margin-top: 20px;
+            width: 100%;
+            padding: 20px;
+            background: var(--dark-oak);
+            color: white;
+            border: none;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 600;
+            letter-spacing: 2px;
+            cursor: pointer;
+            transition: opacity 0.3s;
+        }
+
+        .btn-submit:hover {
+            opacity: 0.9;
+        }
+
+        .back-link {
+            display: block;
+            text-align: center;
+            margin-top: 30px;
+            font-size: 0.8rem;
+            color: #888;
+            text-decoration: none;
+        }
     </style>
 </head>
 <body>
 
-    <div class="nav-bar">
-        <div style="font-family: 'Montserrat'; font-weight: 600; letter-spacing: 2px;">MARKETPLACE.</div>
-        <a href="/marketplace/forbes" style="font-size: 0.8rem; color: #888; text-decoration: none;">Back</a>
+    <div class="auth-container">
+        <h2>Merchant Enrollment.</h2>
+        <p class="subtitle">Join the guild to begin constructing your kiosks.</p>
+        
+        <form action="/register" method="POST">
+            <div class="form-group">
+                <label>Merchant / Brand Name</label>
+                <input type="text" name="name" placeholder="e.g. Victor Adebayo" required>
+            </div>
+            
+            <div class="form-group">
+                <label>Master WhatsApp Number</label>
+                <input type="text" name="phone" placeholder="23480..." required>
+            </div>
+
+            <div class="form-group">
+                <label>Secret Key (Password)</label>
+                <input type="password" name="password" required>
+            </div>
+
+            <button type="submit" class="btn-submit">JOIN THE MARKETPLACE</button>
+        </form>
+        
+        <a href="/" class="back-link">&larr; Return to Marketplace</a>
     </div>
 
-    <div class="container">
-        <div class="welcome-header">
-            <h1>Endorse Merchant.</h1>
-            <p style="font-style: italic; opacity: 0.6;">Submit your recommendation to the Forbes Auction.</p>
-        </div>
-
-        <div class="kiosk-card">
-            <form onsubmit="event.preventDefault(); submitRec();">
-                
-                <label>Merchant Category</label>
-                <select id="category">
-                    <option value="Electronics">Electronics</option>
-                    <option value="Fashion">Fashion</option>
-                    <option value="Food">Food & Drinks</option>
-                    <option value="Beauty">Beauty</option>
-                    <option value="Services">Services</option>
-                </select>
-
-                <label>Find Merchant</label>
-                <div style="position: relative;">
-                    <input type="text" id="merchantSearch" placeholder="Enter name..." autocomplete="off">
-                    <div id="search-results"></div>
-                </div>
-                <input type="hidden" id="selectedMerchantId">
-
-                <div style="margin: 40px 0; border-top: 1px solid #f4f4f4;"></div>
-
-                <label>Customer Email</label>
-                <input type="email" id="email" placeholder="Email address" required>
-
-                <label>Security Key</label>
-                <input type="password" id="password" placeholder="Password" required>
-
-                <button type="submit" class="btn-add-kiosk">LOG RECOMMENDATION</button>
-            </form>
-        </div>
-    </div>
-
-    <script>
-        const searchInput = document.getElementById('merchantSearch');
-        const resultsDiv = document.getElementById('search-results');
-
-        searchInput.addEventListener('input', function() {
-            const query = this.value;
-            if (query.length < 2) {
-                resultsDiv.style.display = 'none';
-                return;
-            }
-            // Mock result UI
-            resultsDiv.innerHTML = `<div class="result-item" onclick="selectMerchant(1, 'Sample Merchant')">Sample Merchant</div>`;
-            resultsDiv.style.display = 'block';
-        });
-
-        function selectMerchant(id, name) {
-            document.getElementById('selectedMerchantId').value = id;
-            searchInput.value = name;
-            resultsDiv.style.display = 'none';
-        }
-
-        function submitRec() {
-            const mId = document.getElementById('selectedMerchantId').value;
-            if (!mId) { alert("Select a merchant from the search."); return; }
-
-            const data = new FormData();
-            data.append('merchant_id', mId);
-            data.append('category', document.getElementById('category').value);
-            data.append('email', document.getElementById('email').value);
-            data.append('password', document.getElementById('password').value);
-
-            fetch('/recommend', { method: 'POST', body: data })
-            .then(res => res.json())
-            .then(res => {
-                if(res.status === 'success') {
-                    window.location.href = '/marketplace/forbes';
-                } else {
-                    alert('Error: ' + res.message);
-                }
-            });
-        }
-    </script>
 </body>
 </html>
