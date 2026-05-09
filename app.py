@@ -1034,5 +1034,99 @@ def payment_callback():
     
     return "Payment failed or was cancelled.", 400
 
+@app.route("/explore")
+def explore():
+    products = db.execute("""
+        SELECT p.*, k.kiosk_name, k.slug AS kiosk_slug, k.theme_color 
+        FROM products p
+        JOIN kiosks k ON p.kiosks_id = k.id
+        WHERE p.is_available = 1
+        ORDER BY k.kiosk_name ASC
+    """)
+    return render_template("gallery.html", products=products)
+
+import uuid
+
+
+
+# --- CHECKOUT LOGIC ---
+@app.route("/checkout", methods=["POST"])
+def checkout():
+    if 'user_id' not in session:
+        return {"success": False, "message": "Please login first"}, 401
+    
+    data = request.get_json()
+    items = data.get('items')
+    
+    for item in items:
+        # Link the order to the ID from the 'buyers' table
+        db.execute("""
+            INSERT INTO orders (buyer_id, kiosks_id, product_name, amount, short_id)
+            VALUES (?, (SELECT id FROM kiosks WHERE kiosk_name = ?), ?, ?, ?)
+        """, session['user_id'], item['merchant'], item['name'], item['price'], "ORD-" + str(uuid.uuid4())[:4].upper())
+        
+    return {"success": True}
+
+from flask import Flask, request, session, jsonify
+# import werkzeug.security if you want to hash passwords
+
+@app.route("/signup_api", methods=["POST"])
+def signup_api():
+    data = request.get_json()
+    
+    # Extract data from the frontend payload
+    name = data.get("name")
+    email = data.get("email")
+    phone = data.get("phone")
+    campus = data.get("campus")
+    password = data.get("pass")
+
+    # Simple validation
+    if not all([name, email, phone, campus, password]):
+        return jsonify({"success": False, "message": "Missing required fields"}), 400
+
+    try:
+        # Insert into 'buyers' table
+        db.execute("""
+            INSERT INTO buyers (fullname, email, phone, campus, password) 
+            VALUES (?, ?, ?, ?, ?)
+        """, name, email, phone, campus, password)
+
+        # Log them in immediately after signup
+        new_user = db.execute("SELECT id FROM buyers WHERE email = ?", email)
+        session["user_id"] = new_user[0]["id"]
+        session["user_name"] = name
+        session["user_type"] = "buyer"
+
+        return jsonify({"success": True})
+    except Exception as e:
+        # Usually happens if email is already taken
+        print(f"Signup Error: {e}")
+        return jsonify({"success": False, "message": "Email already registered."}), 400
+
+@app.route("/login_api", methods=["POST"])
+def login_api():
+    data = request.get_json()
+    email = data.get("email")
+    password = data.get("pass")
+
+    # Check credentials
+    rows = db.execute("SELECT * FROM buyers WHERE email = ?", email)
+
+    if len(rows) != 1 or rows[0]["password"] != password:
+        return jsonify({"success": False, "message": "Invalid email or password"}), 401
+
+    # Set session variables
+    session["user_id"] = rows[0]["id"]
+    session["user_name"] = rows[0]["fullname"]
+    session["user_type"] = "buyer"
+
+    return jsonify({"success": True})
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect("/explore")     
+
 if __name__ == "__main__":
     app.run(port=2000, host="0.0.0.0")

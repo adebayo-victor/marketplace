@@ -91,11 +91,13 @@ db.execute("""
         product_name TEXT NOT NULL,
         product_id INTEGER NOT NULL,
         short_id TEXT NOT NULL UNIQUE,
+        buyer_id INTEGER NOT NULL UNIQUE,
         status TEXT CHECK(status IN ('Pending', 'Processing', 'Dispatched', 'Delivered')) DEFAULT 'Pending',
         amount REAL NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (kiosks_id) REFERENCES kiosks(id) ON DELETE CASCADE,
-        FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+        FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+        FOREIGN KEY (buyer_id) REFERENCES buyers(id) ON DELETE CASCADE
     )
 """)
 
@@ -123,6 +125,20 @@ db.execute("""
         is_active INTEGER DEFAULT 1,
         paid_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (merchant_id) REFERENCES merchants(id) ON DELETE CASCADE
+    )
+""")
+
+9.db.execute("""
+        CREATE TABLE buyers (
+        id SERIAL PRIMARY KEY,
+        fullname TEXT NOT NULL,
+        email TEXT UNIQUE NOT NULL,
+        password TEXT NOT NULL, -- Reminder: Hash these in Python!
+        matric_no TEXT UNIQUE,  -- Specific for student identification
+        phone TEXT,
+        campus TEXT DEFAULT 'FUNAAB', -- Can be 'FUNAAB' or 'FUMMSA'
+        balance REAL DEFAULT 0.0,      -- For future Techlite Wallet feature
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
 """)
 print("Cloud Database checked/initialized successfully. ✅")'''
@@ -195,9 +211,7 @@ if __name__ == "__main__":
 # Add Category column to Kiosks
 
 
+# COMMENT THIS OUT (It's already done!)
+# db.execute("ALTER TABLE orders ADD COLUMN buyer_id INTEGER")
 
-if created:
-    print("email added ✔")
-else:
-    print(f"something happened; {created}")
-
+# ONLY RUN THIS PART:
