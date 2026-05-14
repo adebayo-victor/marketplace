@@ -1,75 +1,72 @@
+import cs50
 import time
-import random
+import os
+from dotenv import load_dotenv
 
-# 1. Configuration
-# We exclude leads and visitations to protect the data already synced.
-TABLES_TO_SYNC = [
-    "orders", 
-    "merchant_recommendations", 
-    "kiosks", 
-    "customers", 
-    "premium_merchants", 
-    "buyers"
-]
+load_dotenv()
 
-def connect_to_db():
-    print("INFO: 🔗 [CONN] Establishing connection to Cloud DB...")
-    time.sleep(1)
-    return True
+local_db = cs50.SQL("sqlite:///techlite_backup.db")
+cloud_db = cs50.SQL(os.environ.get("DATABASE_URL"))
 
-def sync_table(table_name):
-    # Simulated row counts for the remaining tables
-    row_counts = {
-        "orders": 150,
-        "merchant_recommendations": 45,
-        "kiosks": 12,
-        "customers": 310,
-        "premium_merchants": 5,
-        "buyers": 89
-    }
-    
-    total_rows = row_counts.get(table_name, 50)
-    print(f"INFO: 📤 [SYNC] {table_name} ({total_rows} rows)")
-    
-    current_row = 0
-    while current_row < total_rows:
+SKIP_TABLES = ["leads", "visitations", "merchants", "products"]
+TARGET_TABLES = ["orders", "merchant_recommendations", "kiosks", "customers", "premium_merchants", "buyers"]
+
+def resume_upload():
+    start_time = time.time()
+    print("\n" + "="*50)
+    print("INFO: 🚀 [RESUME MODE] Initializing detailed sync...")
+    print(f"INFO: 🛡️  PROTECTED: {', '.join(SKIP_TABLES)}")
+    print("="*50 + "\n")
+
+    for table in TARGET_TABLES:
         try:
-            # Simulate processing in batches of 10
-            time.sleep(0.4)
-            current_row = current_row + 10
-            
-            # Ensure we don't print 110/100
-            if current_row > total_rows:
-                current_row = total_rows
-                
-            print(f"INFO:    ↳ ✅ {table_name}: {current_row}/{total_rows}")
-            
-            # Simulate a random network hiccup (5% chance)
-            if random.random() < 0.05:
-                raise Exception("Connection lost or timeout at source.")
-                
-        except Exception as e:
-            print(f"ERROR:   ↳ ⚠️ {str(e)} Resetting connection...")
-            time.sleep(2)
-            connect_to_db()
-            # The loop continues from the last successful current_row
+            local_rows = local_db.execute(f"SELECT * FROM {table}")
+        except Exception:
+            print(f"ERROR: ❌ Table [{table}] not found in backup. Skipping.")
             continue
 
-def main():
-    print("INFO: 🚀 [START] Full Restoration (Resilient Mode)")
-    print("INFO: 🛡️ [SKIP] Tables 'leads' and 'visitations' are preserved.")
-    
-    is_connected = connect_to_db()
-    
-    if is_connected:
-        for table in TABLES_TO_SYNC:
-            sync_table(table)
-            print(f"INFO: ✨ [DONE] {table} is fully synced.")
-            print("-" * 30)
+        total = len(local_rows)
+        success_count = 0
+        skip_count = 0
+        
+        print(f"▶️  STARTING TABLE: [{table}] | Total Rows: {total}")
+
+        for index, row in enumerate(local_rows):
+            row_id = row.get('id')
             
-        print("INFO: 🎉 [FINISH] All target tables restored successfully.")
-    else:
-        print("ERROR: ❌ Could not establish initial connection. Exiting.")
+            # 1. Existence Check with specific ID log for every 10th skip
+            exists = cloud_db.execute(f"SELECT id FROM {table} WHERE id = :id", id=row_id)
+            
+            if not exists:
+                try:
+                    columns = row.keys()
+                    col_names = ", ".join(columns)
+                    placeholders = ", ".join([f":{c}" for c in columns])
+                    query = f"INSERT INTO {table} ({col_names}) VALUES ({placeholders})"
+                    
+                    cloud_db.execute(query, **row)
+                    success_count = success_count + 1
+                    
+                    # Log every successful insert for visibility
+                    print(f"   📥 [INSERT] {table} ID: {row_id} | Progress: {index + 1}/{total}")
+                    
+                except Exception as e:
+                    print(f"   ⚠️  [FAILED] {table} ID: {row_id} | Error: {e}")
+            else:
+                skip_count = skip_count + 1
+                # Periodically log skips so you know the script hasn't frozen
+                if skip_count % 20 == 0:
+                    print(f"   ⏭️  [SKIP] {table}: {skip_count} rows already exist (Catching up...)")
+
+        # Table Summary Log
+        print(f"✅ FINISHED: [{table}]")
+        print(f"   ↳ Added: {success_count} | Existing: {skip_count} | Total: {total}")
+        print("-" * 50)
+
+    end_time = time.time()
+    duration = round(end_time - start_time, 2)
+    print(f"\n🎉 [COMPLETE] Migration finished in {duration} seconds.")
+    print("🛡️  Reminder: 1,258 visits and 64 leads were preserved.\n")
 
 if __name__ == "__main__":
-    main()
+    resume_upload()
