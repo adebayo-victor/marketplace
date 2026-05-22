@@ -555,11 +555,13 @@ def get_products():
     if not k_id:
         return jsonify({"error": "No Kiosk ID provided"}), 400
         
-    # Fetch only available products for this specific kiosk
-    db.execute("""
-        INSERT INTO products (kiosks_id, name, price, stock, image_url, is_available)
-        VALUES (?, ?, ?, ?, ?, 1)
-    """, k_id, name, price, stock, image_url)
+    # FIXED: Check if it's explicitly available OR if it's default null/unmarked, sorted by newest first
+    products = db.execute("""
+        SELECT id, name, price, stock, image_url 
+        FROM products 
+        WHERE kiosks_id = ? AND (is_available = 1 OR is_available IS NULL)
+        ORDER BY id DESC
+    """, k_id)
     
     return jsonify(products)
 
