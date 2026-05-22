@@ -97,7 +97,7 @@ def index():
         SELECT k.kiosk_name, k.slug, COUNT(v.id) as visit_count 
         FROM kiosks k 
         LEFT JOIN visitations v ON k.id = v.kiosks_id 
-        GROUP BY k.id 
+        GROUP BY k.id, k.kiosk_name, k.slug 
         ORDER BY visit_count DESC 
         LIMIT 3
     """)

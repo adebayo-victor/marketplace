@@ -215,3 +215,5 @@ if __name__ == "__main__":
 # db.execute("ALTER TABLE orders ADD COLUMN buyer_id INTEGER")
 
 # ONLY RUN THIS PART:
+
+print(db.execute("SELECT * FROM merchants"))
