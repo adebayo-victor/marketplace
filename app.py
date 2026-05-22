@@ -559,7 +559,7 @@ def get_products():
     db.execute("""
         INSERT INTO products (kiosks_id, name, price, stock, image_url, is_available)
         VALUES (?, ?, ?, ?, ?, 1)
-    """, kiosk["id"], name, price, stock, image_url)
+    """, k_id, name, price, stock, image_url)
     
     return jsonify(products)
 
