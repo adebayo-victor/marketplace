@@ -559,7 +559,7 @@ def get_products():
     products = db.execute("""
         SELECT id, name, price, stock, image_url 
         FROM products 
-        WHERE kiosks_id = ?
+        WHERE kiosks_id = ? AND (is_available = 1 OR is_available IS NULL)
         ORDER BY id DESC
     """, k_id)
     

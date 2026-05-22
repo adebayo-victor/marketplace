@@ -216,7 +216,12 @@ if __name__ == "__main__":
 
 # ONLY RUN THIS PART:
 
-products = (db.execute("SELECT name FROM products WHERE kiosks_id = ?", 27))
+products = db.execute("""
+        SELECT id, name, price, stock, image_url 
+        FROM products 
+        WHERE kiosks_id = ? AND (is_available = 1 OR is_available IS NULL)
+        ORDER BY id DESC
+    """, 27)
 for product in products:
-    print(product)
+    print(product['name'])
 print("Total products: ", len(products))
