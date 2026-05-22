@@ -31,7 +31,7 @@ os.getenv("GEMINI_API_KEY")
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
 app = Flask(__name__)
-db = SQL(os.envir0n.get("DATABASE_URL"))
+db = SQL(os.environ.get("DATABASE_URL"))
 app.secret_key = 'super-secret-key-for-marketplace'
 
 #cloudinary configuration
