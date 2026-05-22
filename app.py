@@ -556,11 +556,10 @@ def get_products():
         return jsonify({"error": "No Kiosk ID provided"}), 400
         
     # Fetch only available products for this specific kiosk
-    products = db.execute("""
-        SELECT id, name, price, stock, image_url 
-        FROM products 
-        WHERE kiosks_id = ? AND is_available = 1
-    """, k_id)
+    db.execute("""
+        INSERT INTO products (kiosks_id, name, price, stock, image_url, is_available)
+        VALUES (?, ?, ?, ?, ?, 1)
+    """, kiosk["id"], name, price, stock, image_url)
     
     return jsonify(products)
 

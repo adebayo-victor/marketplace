@@ -216,4 +216,7 @@ if __name__ == "__main__":
 
 # ONLY RUN THIS PART:
 
-print(db.execute("SELECT * FROM merchants"))
+products = (db.execute("SELECT name FROM products WHERE kiosks_id = ?", 27))
+for product in products:
+    print(product)
+print("Total products: ", len(products))
