@@ -771,11 +771,15 @@ def verify_payment(slug):
             if kiosk_rows:
                 kiosk_id = kiosk_rows[0]["id"]
                 
-                # 🟢 LOG PAYMENT: Matching your exact schema columns
+                # 📅 Compute expiration timestamp safely in Python
+                from datetime import datetime, timedelta
+                expiry_time = (datetime.now() + timedelta(days=30)).strftime('%Y-%m-%d %H:%M:%S')
+                
+                # 🟢 LOG PAYMENT: Explicitly mapping values to your exact schema column bindings
                 db.execute("""
                     INSERT INTO subscriptions (merchant_id, kiosk_id, status, amount_paid, expires_at)
-                    VALUES (?, ?, 'active', 10000.0, datetime('now', '+30 days'))
-                """, session["merchant_id"], kiosk_id)
+                    VALUES (?, ?, 'active', 10000.0, ?)
+                """, session["merchant_id"], kiosk_id, expiry_time)
 
             # 2. SUCCESS: Unlock the Kiosk 🔓
             db.execute("UPDATE kiosks SET is_active = 1 WHERE slug = ?", slug)
@@ -783,7 +787,7 @@ def verify_payment(slug):
         else:
             return "Payment verification failed. Please contact support.", 400
     except Exception as e:
-        return f"Verification Error: {e}", 500   
+        return f"Verification Error: {e}", 500  
 
 
 
