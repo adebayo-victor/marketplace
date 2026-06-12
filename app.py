@@ -171,16 +171,20 @@ def dashboard():
 
     # Fetch all kiosks owned by this merchant
     # We use a subquery to count visits and orders per kiosk
+    # Update this specific query inside your @app.route("/dashboard") function
     kiosks = db.execute("""
-        SELECT 
-            k.*,
-            (SELECT COUNT(*) FROM visitations v WHERE v.kiosks_id = k.id) as visit_count,
-            (SELECT COUNT(*) FROM orders o WHERE o.kiosks_id = k.id) as order_count
+        SELECT k.*, 
+            CASE 
+                WHEN s.id IS NOT NULL AND s.expires_at > ? THEN k.is_active 
+                ELSE 0 
+            END as is_active
         FROM kiosks k
+        LEFT JOIN subscriptions s ON k.id = s.kiosk_id AND s.status = 'active'
         WHERE k.merchant_id = ?
-    """, session["merchant_id"])
+        ORDER BY k.created_at DESC
+    """, datetime.now().strftime('%Y-%m-%d %H:%M:%S'), session["merchant_id"])
 
-    return render_template("dashboard.html", kiosks=kiosks)
+        return render_template("dashboard.html", kiosks=kiosks)
 
 @app.route("/merchant/set_category", methods=["POST"])
 def set_category():
