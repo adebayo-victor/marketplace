@@ -729,7 +729,7 @@ def initialize_payment(slug):
     data = {
         "email": email,
         "amount": amount,
-        "callback_url": f"http://127.0.0.1:2000/verify_payment/{slug}",
+        "callback_url": f"http://marketplace-ekhr.onrender.com/verify_payment/{slug}",
         "metadata": {
             "kiosk_slug": slug,
             "merchant_id": session["merchant_id"]
@@ -783,7 +783,7 @@ def verify_payment(slug):
         else:
             return "Payment verification failed. Please contact support.", 400
     except Exception as e:
-        return f"Verification Error: {e}", 500  
+        return f"Verification Error: {e}", 500      
 
 
 
