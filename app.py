@@ -520,8 +520,8 @@ from flask import request
 
 @app.route("/<slug>")
 def view_kiosk(slug):
-    # 1. Fetch the kiosk details
-    rows = db.execute("SELECT * FROM kiosks WHERE slug = ?", slug)
+    # 1. Fetch the kiosk details using Postgres named parameters
+    rows = db.execute("SELECT * FROM kiosks WHERE slug = :slug", slug=slug)
     
     # 2. Check if the kiosk exists
     if not rows or len(rows) == 0:
@@ -529,8 +529,12 @@ def view_kiosk(slug):
         
     kiosk = rows[0]
     
-    # 3. Check the lock status
-    if kiosk["is_active"] == 0:
+    # 🔥 Check if the visitor is the authenticated owner of THIS specific kiosk
+    is_owner = "merchant_id" in session and session["merchant_id"] == kiosk["merchant_id"]
+    is_previewing = request.args.get("preview") == "true" and is_owner
+    
+    # 3. Check the lock status (Only allow entry if active OR if it's the verified owner previewing)
+    if kiosk["is_active"] == 0 and not is_previewing:
         return render_template("locked_site.html", kiosk=kiosk)
 
     # 4. Final safety check: Does generated_html actually have content?
@@ -538,15 +542,16 @@ def view_kiosk(slug):
         return "<h1>Site Under Construction</h1><p>The architect is still laying the bricks.</p>", 200
 
     # --- 🚀 ADD VISITATION COUNT ---
-    # We grab the IP and User Agent to log the visit before returning the HTML
-    user_ip = request.remote_addr or "0.0.0.0"
-    ip_hash = hashlib.sha256(user_ip.encode()).hexdigest() # Hash the IP for security
-    user_agent = request.headers.get('User-Agent', 'Unknown')
+    # Only track metrics for actual customer traffic, skip tracking for the owner
+    if not is_previewing:
+        user_ip = request.remote_addr or "0.0.0.0"
+        ip_hash = hashlib.sha256(user_ip.encode()).hexdigest() 
+        user_agent = request.headers.get('User-Agent', 'Unknown')
 
-    db.execute("""
-        INSERT INTO visitations (kiosks_id, ip_hash, user_agent) 
-        VALUES (?, ?, ?)
-    """, kiosk["id"], ip_hash, user_agent)
+        db.execute("""
+            INSERT INTO visitations (kiosks_id, ip_hash, user_agent) 
+            VALUES (:kiosk_id, :ip_hash, :user_agent)
+        """, kiosk_id=kiosk["id"], ip_hash=ip_hash, user_agent=user_agent)
     # -------------------------------
 
     # 5. Return the raw HTML string
