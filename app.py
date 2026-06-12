@@ -400,20 +400,28 @@ def new_kiosk():
                 uploaded_urls[slot] = None
 
         # 4. INITIAL DATABASE INSERT (The "Foundation")
+        # 4. INITIAL DATABASE INSERT (Explicitly returning the new ID)
         try:
-            # We insert first to get the k_id (the primary key)
-            k_id = db.execute("""
+            # 1. We append 'RETURNING id' to force Postgres to hand back the exact sequence key
+            result = db.execute("""
                 INSERT INTO kiosks (
                     merchant_id, kiosk_name, slug, description, 
                     logo_url, banner_url, gallery_1, gallery_2, background_url, 
                     is_active
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
+                VALUES (:merchant_id, :name, :slug, :vibe, :logo, :banner, :g1, :g2, :bg, 1)
+                RETURNING id
             """, 
-            session["merchant_id"], name, slug, vibe,
-            uploaded_urls["logo_url"], uploaded_urls["banner_url"], 
-            uploaded_urls["gallery_1"], uploaded_urls["gallery_2"], 
-            uploaded_urls["background_url"])
+            merchant_id=session["merchant_id"], name=name, slug=slug, vibe=vibe,
+            logo=uploaded_urls["logo_url"], banner=uploaded_urls["banner_url"], 
+            g1=uploaded_urls["gallery_1"], g2=uploaded_urls["gallery_2"], 
+            bg=uploaded_urls["background_url"])
+
+            # 2. Extract the integer primary key value safely from the returned dictionary list
+            if isinstance(result, list) and len(result) > 0:
+                k_id = result[0]["id"]
+            else:
+                k_id = result
 
             # 5. PREPARE MODULE DATA FOR AI
             module_data = {
@@ -423,7 +431,6 @@ def new_kiosk():
             }
 
             # 6. TRIGGER THE AI ARCHITECT
-            # Pass the freshly minted k_id and the uploaded URLs
             ai_html = generate_kiosk_architecture(
                 name=name, 
                 vibe=vibe, 
@@ -433,13 +440,13 @@ def new_kiosk():
                 images=uploaded_urls
             )
 
-            # 7. THE FINAL BRICK: Update the row with the code
+            # 7. THE FINAL BRICK: Update using explicit named keys
             if ai_html:
-                db.execute("UPDATE kiosks SET generated_html = ? WHERE id = ?", ai_html, k_id)
+                db.execute("UPDATE kiosks SET generated_html = :html WHERE id = :id", html=ai_html, id=k_id)
             else:
                 print(f"⚠️ Error: AI generated no code for Kiosk ID {k_id}")
 
-            return redirect("/dashboard")
+            return redirect("/dashboard")   
 
         except Exception as e:
             print(f"❌ Critical Failure in new_kiosk: {e}")
