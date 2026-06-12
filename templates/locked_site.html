@@ -1,19 +1,87 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Store Inactive</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Storefront Locked // Marketplace</title>
     <style>
-        body { background: #f9f5f0; display: flex; align-items: center; justify-content: center; height: 100vh; font-family: 'Montserrat', sans-serif; text-align: center; }
-        .box { background: white; padding: 50px; border-top: 5px solid #8d5b3e; box-shadow: 0 20px 40px rgba(0,0,0,0.05); }
-        h1 { text-transform: lowercase; letter-spacing: -1px; }
-        p { color: #888; margin-bottom: 30px; }
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;600&display=swap');
+        :root { --clay: #8d5b3e; --cream: #f9f5f0; --dark-oak: #2d1e14; }
+        
+        body { 
+            background: var(--cream); 
+            color: var(--dark-oak); 
+            font-family: 'Georgia', serif; 
+            margin: 0; 
+            height: 100vh; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            text-align: center;
+        }
+        
+        .lock-container {
+            padding: 40px;
+            max-width: 500px;
+            width: 90%;
+        }
+        
+        .lock-icon {
+            font-size: 3.5rem;
+            margin-bottom: 25px;
+            animation: float 4s ease-in-out infinite;
+        }
+        
+        h1 {
+            font-family: 'Montserrat';
+            font-size: 2rem;
+            text-transform: lowercase;
+            letter-spacing: -0.5px;
+            margin: 0 0 15px 0;
+        }
+        
+        p {
+            font-size: 0.95rem;
+            line-height: 1.6;
+            color: #666;
+            margin: 0 0 30px 0;
+            font-style: italic;
+        }
+        
+        .divider {
+            height: 1px;
+            width: 60px;
+            background: var(--clay);
+            margin: 0 auto 30px auto;
+        }
+        
+        .footer-brand {
+            font-family: 'Montserrat';
+            font-size: 0.65rem;
+            font-weight: 600;
+            letter-spacing: 2px;
+            color: var(--clay);
+            text-transform: uppercase;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
     </style>
 </head>
 <body>
-    <div class="box">
-        <h1>{{ kiosk.kiosk_name }} is currently inactive.</h1>
-        <p>This storefront is awaiting its annual maintenance activation.</p>
-        <div style="font-size: 3rem;">🔒</div>
+
+    <div class="lock-container">
+        <div class="lock-icon">🔒</div>
+        <h1>storefront locked.</h1>
+        <div class="divider"></div>
+        <p>
+            The shop <strong>"{{ kiosk.kiosk_name }}"</strong> is currently undergoing routine technical adjustments or verification setup profiles and is temporarily inaccessible to the public.
+        </p>
+        <div class="footer-brand">Marketplace. Powered by Techlite</div>
     </div>
+
 </body>
 </html>
