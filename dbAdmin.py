@@ -141,6 +141,35 @@ db.execute("""
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
 """)
+
+10.db.execute("""
+    CREATE TABLE IF NOT EXISTS subscriptions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        merchant_id INTEGER NOT NULL,
+        kiosk_id INTEGER NOT NULL,
+        status TEXT DEFAULT 'active', -- 'active', 'expired', 'pending_payment'
+        amount_paid REAL NOT NULL,
+        starts_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        expires_at DATETIME NOT NULL,
+        FOREIGN KEY(merchant_id) REFERENCES users(id),
+        FOREIGN KEY(kiosk_id) REFERENCES kiosks(id)
+    )
+""")
+
+11.db.execute("""
+    CREATE TABLE IF NOT EXISTS feature_orders (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        kiosk_id INTEGER NOT NULL,
+        merchant_id INTEGER NOT NULL,
+        feature_key TEXT NOT NULL,       -- e.g., 'whatsapp_automation', 'payment_gateway'
+        amount_paid REAL NOT NULL,
+        status TEXT DEFAULT 'pending_build', -- 'pending_build', 'completed'
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(kiosk_id) REFERENCES kiosks(id),
+        FOREIGN KEY(merchant_id) REFERENCES users(id)
+    )
+""")
+
 print("Cloud Database checked/initialized successfully. ✅")'''
 
 # --- SEEDER SECTION ---
@@ -214,14 +243,6 @@ if __name__ == "__main__":
 # COMMENT THIS OUT (It's already done!)
 # db.execute("ALTER TABLE orders ADD COLUMN buyer_id INTEGER")
 
-# ONLY RUN THIS PART:
 
-products = db.execute("""
-        SELECT id, name, price, stock, image_url 
-        FROM products 
-        WHERE kiosks_id = ? AND (is_available = 1 OR is_available IS NULL)
-        ORDER BY id DESC
-    """, 27)
-for product in products:
-    print(product['name'])
-print("Total products: ", len(products))
+
+print(db.execute("SELECT * FROM products"))
