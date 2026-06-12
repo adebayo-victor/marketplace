@@ -758,21 +758,32 @@ def verify_payment(slug):
 
     # 1. Verify with Paystack
     url = f"https://api.paystack.co/transaction/verify/{reference}"
-    headers = {"Authorization": f"Bearer {PAYSTACK_KEY}"}
+    headers = {"Authorization": f"Bearer {PAYSTACK_SECRET_KEY}"}
 
     try:
         response = requests.get(url, headers=headers)
         res_data = response.json()
 
         if res_data["status"] and res_data["data"]["status"] == "success":
+            # Fetch the kiosk row to grab its true ID
+            kiosk_rows = db.execute("SELECT id FROM kiosks WHERE slug = :slug", slug=slug)
+            
+            if kiosk_rows:
+                kiosk_id = kiosk_rows[0]["id"]
+                
+                # 🟢 LOG PAYMENT: Save straight to subscriptions table
+                db.execute("""
+                    INSERT INTO subscriptions (merchant_id, kiosks_id, payment_ref, amount)
+                    VALUES (:merchant_id, :kiosk_id, :ref, 10000)
+                """, merchant_id=session["merchant_id"], kiosk_id=kiosk_id, ref=reference)
+
             # 2. SUCCESS: Unlock the Kiosk 🔓
-            db.execute("UPDATE kiosks SET is_active = 1 WHERE slug = ?", slug)
-            # You might want to log the payment reference in a 'payments' table later
+            db.execute("UPDATE kiosks SET is_active = 1 WHERE slug = :slug", slug=slug)
             return redirect("/dashboard")
         else:
             return "Payment verification failed. Please contact support.", 400
     except Exception as e:
-        return f"Verification Error: {e}", 500
+        return f"Verification Error: {e}", 500  
 
 
 
