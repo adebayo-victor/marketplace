@@ -409,7 +409,7 @@ def new_kiosk():
                     logo_url, banner_url, gallery_1, gallery_2, background_url, 
                     is_active
                 )
-                VALUES (:merchant_id, :name, :slug, :vibe, :logo, :banner, :g1, :g2, :bg, 1)
+                VALUES (:merchant_id, :name, :slug, :vibe, :logo, :banner, :g1, :g2, :bg, 0)
                 RETURNING id
             """, 
             merchant_id=session["merchant_id"], name=name, slug=slug, vibe=vibe,
@@ -520,8 +520,8 @@ from flask import request
 
 @app.route("/<slug>")
 def view_kiosk(slug):
-    # 1. Fetch the kiosk details using Postgres named parameters
-    rows = db.execute("SELECT * FROM kiosks WHERE slug = :slug", slug=slug)
+    # 1. Fetch the kiosk details
+    rows = db.execute("SELECT * FROM kiosks WHERE slug = ?", slug)
     
     # 2. Check if the kiosk exists
     if not rows or len(rows) == 0:
@@ -529,20 +529,29 @@ def view_kiosk(slug):
         
     kiosk = rows[0]
     
-    # 🔥 Check if the visitor is the authenticated owner of THIS specific kiosk
+    # 3. Verify owner preview privileges
     is_owner = "merchant_id" in session and session["merchant_id"] == kiosk["merchant_id"]
     is_previewing = request.args.get("preview") == "true" and is_owner
+
+    # 4. SUBSCRIPTION LIFECYCLE CHECK (Checks if active and not expired)
+    sub_rows = db.execute("""
+        SELECT 1 FROM subscriptions 
+        WHERE kiosk_id = ? AND status = 'active' AND expires_at > ?
+    """, kiosk["id"], datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
     
-    # 3. Check the lock status (Only allow entry if active OR if it's the verified owner previewing)
-    if kiosk["is_active"] == 0 and not is_previewing:
+    is_subscription_valid = len(sub_rows) > 0
+
+    # Fallback to kiosk.is_active safety flag if subscription record is missing entirely
+    has_access = is_subscription_valid or (kiosk["is_active"] == 1)
+
+    if not has_access and not is_previewing:
         return render_template("locked_site.html", kiosk=kiosk)
 
-    # 4. Final safety check: Does generated_html actually have content?
+    # 5. Final safety check: Does generated_html actually have content?
     if not kiosk['generated_html']:
         return "<h1>Site Under Construction</h1><p>The architect is still laying the bricks.</p>", 200
 
     # --- 🚀 ADD VISITATION COUNT ---
-    # Only track metrics for actual customer traffic, skip tracking for the owner
     if not is_previewing:
         user_ip = request.remote_addr or "0.0.0.0"
         ip_hash = hashlib.sha256(user_ip.encode()).hexdigest() 
@@ -550,13 +559,12 @@ def view_kiosk(slug):
 
         db.execute("""
             INSERT INTO visitations (kiosks_id, ip_hash, user_agent) 
-            VALUES (:kiosk_id, :ip_hash, :user_agent)
-        """, kiosk_id=kiosk["id"], ip_hash=ip_hash, user_agent=user_agent)
+            VALUES (?, ?, ?)
+        """, kiosk["id"], ip_hash, user_agent)
     # -------------------------------
 
-    # 5. Return the raw HTML string
+    # 6. Return the raw HTML string
     return kiosk["generated_html"]
-
 
 
 @app.route("/api/get_products", methods=["POST"])
