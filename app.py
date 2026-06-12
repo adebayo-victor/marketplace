@@ -766,24 +766,24 @@ def verify_payment(slug):
 
         if res_data["status"] and res_data["data"]["status"] == "success":
             # Fetch the kiosk row to grab its true ID
-            kiosk_rows = db.execute("SELECT id FROM kiosks WHERE slug = :slug", slug=slug)
+            kiosk_rows = db.execute("SELECT id FROM kiosks WHERE slug = ?", slug)
             
             if kiosk_rows:
                 kiosk_id = kiosk_rows[0]["id"]
                 
-                # 🟢 LOG PAYMENT: Save straight to subscriptions table
+                # 🟢 LOG PAYMENT: Matching your exact schema columns
                 db.execute("""
-                    INSERT INTO subscriptions (merchant_id, kiosks_id, payment_ref, amount)
-                    VALUES (:merchant_id, :kiosk_id, :ref, 10000)
-                """, merchant_id=session["merchant_id"], kiosk_id=kiosk_id, ref=reference)
+                    INSERT INTO subscriptions (merchant_id, kiosk_id, status, amount_paid, expires_at)
+                    VALUES (?, ?, 'active', 10000.0, datetime('now', '+30 days'))
+                """, session["merchant_id"], kiosk_id)
 
             # 2. SUCCESS: Unlock the Kiosk 🔓
-            db.execute("UPDATE kiosks SET is_active = 1 WHERE slug = :slug", slug=slug)
+            db.execute("UPDATE kiosks SET is_active = 1 WHERE slug = ?", slug)
             return redirect("/dashboard")
         else:
             return "Payment verification failed. Please contact support.", 400
     except Exception as e:
-        return f"Verification Error: {e}", 500      
+        return f"Verification Error: {e}", 500   
 
 
 
