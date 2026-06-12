@@ -184,7 +184,7 @@ def dashboard():
         ORDER BY k.created_at DESC
     """, datetime.now().strftime('%Y-%m-%d %H:%M:%S'), session["merchant_id"])
 
-        return render_template("dashboard.html", kiosks=kiosks)
+    return render_template("dashboard.html", kiosks=kiosks)
 
 @app.route("/merchant/set_category", methods=["POST"])
 def set_category():
