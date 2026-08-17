@@ -21,10 +21,8 @@ import cloudinary.uploader
 
 # Load the key from a .env file
 load_dotenv()
-#paystack key
-PAYSTACK_SECRET_KEY = os.getenv("PAYSTACK_KEY")
-
-
+# Paystack secret unified
+PAYSTACK_SECRET = os.getenv("PAYSTACK_KEY")
 
 # genai configuration
 os.getenv("GEMINI_API_KEY")
@@ -32,7 +30,8 @@ genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
 app = Flask(__name__)
 db = SQL(os.environ.get("DATABASE_URL"))
-app.secret_key = 'super-secret-key-for-marketplace'
+# Use environment-provided secret key
+app.secret_key = os.environ.get("FLASK_SECRET", os.urandom(24))
 
 #cloudinary configuration
 cloudinary.config( 
@@ -55,6 +54,7 @@ def upload_bytes_to_cloudinary(file_bytes, folder_name="general"):
             folder=f"marketplace/{folder_name}",
             resource_type="auto" # Handles images, icons, or backgrounds
         )
+        # Prefer returning the public_id for future deletes, but keep secure_url too
         return response.get("secure_url")
     except Exception as e:
         print(f"❌ RAM-to-Cloudinary Error: {e}")
@@ -130,11 +130,14 @@ def register():
         if existing:
             return render_template("taken.html")
 
+        # Hash the password before storing
+        hashed_pw = generate_password_hash(password)
+
         # Create the Master Merchant Account
         db.execute("""
             INSERT INTO merchants (name, slug, whatsapp_number, password) 
             VALUES (?, ?, ?, ?)
-        """, name, merchant_slug, phone, password)
+        """, name, merchant_slug, phone, hashed_pw)
 
         return redirect("/login") # Better to send them to login first
 
@@ -152,7 +155,7 @@ def login():
         # Verify Master Account
         user = db.execute("SELECT * FROM merchants WHERE slug = ?", target_slug)
 
-        if not user or user[0]["password"] != password:
+        if not user or not check_password_hash(user[0].get("password", ""), password):
             return render_template("login.html", error="Invalid merchant name or secret key.")
 
         # Establish Global Session
@@ -312,59 +315,6 @@ def edit_product(slug, product_id):
 
 
 
-'''def generate_kiosk_architecture(name, vibe, kiosk_id, whatsapp_number):
-    """
-    Calls the AI to generate a complete, responsive storefront.
-    """
-    model = genai.GenerativeModel('gemini-3-flash-preview') # Using Flash for speed/reliability
-    
-    prompt = f"""
-        Act as a Full-Stack Web Designer. Generate a single-file HTML storefront for '{name}'.
-        BRAND VIBE: {vibe}
-        
-        TECHNICAL REQUIREMENTS:
-        1. STYLING:
-        - Include a <style> block with CSS matching the '{vibe}' aesthetic.
-        - Mobile-responsive, luxury feel, with a floating cart icon + badge.
-        - Design a beautiful Modal/Overlay for the "Lead Capture" form.
-
-        2. JAVASCRIPT LOGIC (THE FLOW):
-        - FETCH: On load, POST to '/api/get_products' with {{ "kiosk_id": {kiosk_id} }}.
-        - RENDER: Inject products into 'product-grid'.
-        - CART: Use localStorage for 'addToCart' logic.
-        - THE LEAD TRAP: When 'Checkout' is clicked, show a Modal asking for 'Name' and 'WhatsApp Number'.
-        - SUBMISSION: 
-                a) On form submit, POST the name, phone, and kiosk_id ({kiosk_id}) to '/api/capture_lead'.
-                b) Use .then() to wait for success, then redirect to:
-                https://wa.me/{whatsapp_number}?text=[Detailed_Order_Message]
-
-        3. UI COMPONENTS:
-        - Hero section, Product Grid, and a slide-out Cart.
-        - The 'Lead Capture' Modal (Must look premium, not like a pop-up ad).
-
-        Return ONLY raw HTML/CSS/JS. No markdown code blocks. Mobile friendly is priority.
-        """
-    
-    try:
-        response = model.generate_content(prompt)
-        # We strip any accidentally included backticks from the AI response
-        clean_html = response.text.replace("```html", "").replace("```", "").strip()
-        return clean_html
-    except Exception as e:
-        # Fallback if the AI fails
-        return f"""
-        <div style='text-align:center; padding:50px; font-family:sans-serif;'>
-            <h1>🏗️ Site Under Construction</h1>
-            <p>Our AI Architect is currently busy. Please refresh to try again.</p>
-            <small style='color:red;'>Error: {e}</small>
-        </div>
-        """  '''
-
-
-
-
-
-
 
 @app.route("/kiosk/new", methods=["GET", "POST"])
 def new_kiosk():
@@ -406,26 +356,25 @@ def new_kiosk():
         # 4. INITIAL DATABASE INSERT (The "Foundation")
         # 4. INITIAL DATABASE INSERT (Explicitly returning the new ID)
         try:
-            # 1. We append 'RETURNING id' to force Postgres to hand back the exact sequence key
-            result = db.execute("""
+            # Use standard insert then fetch last_insert_rowid (works with SQLite)
+            db.execute("""
                 INSERT INTO kiosks (
                     merchant_id, kiosk_name, slug, description, 
                     logo_url, banner_url, gallery_1, gallery_2, background_url, 
                     is_active
                 )
-                VALUES (:merchant_id, :name, :slug, :vibe, :logo, :banner, :g1, :g2, :bg, 0)
-                RETURNING id
-            """, 
-            merchant_id=session["merchant_id"], name=name, slug=slug, vibe=vibe,
-            logo=uploaded_urls["logo_url"], banner=uploaded_urls["banner_url"], 
-            g1=uploaded_urls["gallery_1"], g2=uploaded_urls["gallery_2"], 
-            bg=uploaded_urls["background_url"])
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
+            """, session["merchant_id"], name, slug, vibe,
+            uploaded_urls["logo_url"], uploaded_urls["banner_url"], 
+            uploaded_urls["gallery_1"], uploaded_urls["gallery_2"], 
+            uploaded_urls["background_url"])
 
-            # 2. Extract the integer primary key value safely from the returned dictionary list
-            if isinstance(result, list) and len(result) > 0:
-                k_id = result[0]["id"]
+            # Fetch the last inserted id in a portable way
+            last_row = db.execute("SELECT last_insert_rowid() as id")
+            if last_row and isinstance(last_row, list):
+                k_id = last_row[0]["id"] if isinstance(last_row[0], dict) and "id" in last_row[0] else last_row[0][0]
             else:
-                k_id = result
+                k_id = None
 
             # 5. PREPARE MODULE DATA FOR AI
             module_data = {
@@ -435,20 +384,23 @@ def new_kiosk():
             }
 
             # 6. TRIGGER THE AI ARCHITECT
-            ai_html = generate_kiosk_architecture(
-                name=name, 
-                vibe=vibe, 
-                kiosk_id=k_id, 
-                whatsapp=whatsapp, 
-                module_data=module_data, 
-                images=uploaded_urls
-            )
+            try:
+                ai_html = generate_kiosk_architecture(
+                    name=name, 
+                    vibe=vibe, 
+                    kiosk_id=k_id, 
+                    whatsapp=whatsapp, 
+                    module_data=module_data, 
+                    images=uploaded_urls
+                )
 
-            # 7. THE FINAL BRICK: Update using explicit named keys
-            if ai_html:
-                db.execute("UPDATE kiosks SET generated_html = :html WHERE id = :id", html=ai_html, id=k_id)
-            else:
-                print(f"⚠️ Error: AI generated no code for Kiosk ID {k_id}")
+                # 7. THE FINAL BRICK: Update using explicit named keys
+                if ai_html and k_id:
+                    db.execute("UPDATE kiosks SET generated_html = :html WHERE id = :id", html=ai_html, id=k_id)
+                else:
+                    print(f"⚠️ Error: AI generated no code for Kiosk ID {k_id}")
+            except Exception as e:
+                print(f"AI generation failed: {e}")
 
             return redirect("/dashboard")   
 
@@ -496,13 +448,13 @@ def generate_kiosk_architecture(name, vibe, kiosk_id, whatsapp, module_data, ima
         TECHNICAL SPECS:
         1. STYLING: Premium CSS in a <style> block. Use backdrop-filter for glassmorphism headers. mobile friendly.
         2. ASSETS: If an asset URL is 'none', use a CSS-only decorative fallback (like a gradient). Do NOT use placeholder.com.
-        3. DATA: Fetch products from 'https://marketplace-ekhr.onrender.com/api/get_products' via POST {{ "kiosk_id": {kiosk_id} }}. The src can be gotten from the fetched data, the key is "image_url".
+        3. DATA: Fetch products from '/api/get_products' via POST {{ "kiosk_id": {kiosk_id} }}. The src can be gotten from the fetched data, the key is "image[...]"
         4. CART: Implement a sliding 'Cart Drawer'. Users must be able to adjust quantities and see a subtotal.
         5. CHECKOUT & LEAD CAPTURE: [prices in naira]
         - Build a form for Customer Name and WhatsApp/Phone.
         - DISCREET ACTION: When the form is submitted, first send a background POST request to '/api/capture_lead' with {{ "kiosk_id": {kiosk_id}, "name": name, "phone": phone }}. 
         - DO NOT wait for this request to finish before proceeding to the WhatsApp redirect.
-        6. WHATSAPP BRIDGE: After lead capture, redirect to: https://wa.me/{whatsapp}?text=... (Include Name, Itemized List, Total, and the link to the order form at {{ url_for('order_form', merchant_slug=merchant.slug) }}).
+        6. WHATSAPP BRIDGE: After lead capture, redirect to: https://wa.me/{whatsapp}?text=... (Include Name, Itemized List, Total, and the link to the order form at {{ url_for('order_form', merc[...]}}
         7. LOGIC: Use standard 'if/else' statements. **DO NOT use ternary operators (?:)** in the code.
         8. Ensure the background is visible, but the styling remains unaffected.
         9. Add a dark/light theme toggle.
@@ -514,9 +466,6 @@ def generate_kiosk_architecture(name, vibe, kiosk_id, whatsapp, module_data, ima
         return response.text.replace("```html", "").replace("```", "").strip()
     except Exception as e:
         return f"<div style='padding:20px; color:red;'>Architectural failure: {e}</div>"
-
-
-
 
 
 import hashlib
@@ -557,7 +506,7 @@ def view_kiosk(slug):
 
     # --- 🚀 ADD VISITATION COUNT ---
     if not is_previewing:
-        user_ip = request.remote_addr or "0.0.0.0"
+        user_ip = request.headers.get('X-Forwarded-For', request.remote_addr) or "0.0.0.0"
         ip_hash = hashlib.sha256(user_ip.encode()).hexdigest() 
         user_agent = request.headers.get('User-Agent', 'Unknown')
 
@@ -597,7 +546,15 @@ def format_to_wat(utc_val):
     
     # If it's already a datetime object, use it. If it's a string, parse it.
     if isinstance(utc_val, str):
-        utc_dt = datetime.strptime(utc_val, "%Y-%m-%d %H:%M:%S")
+        try:
+            utc_dt = datetime.strptime(utc_val, "%Y-%m-%d %H:%M:%S")
+        except Exception:
+            # Fallback to ISO parsing
+            try:
+                from dateutil import parser
+                utc_dt = parser.isoparse(utc_val)
+            except Exception:
+                return utc_val
     else:
         utc_dt = utc_val
 
@@ -634,7 +591,7 @@ def capture_lead():
 
     return jsonify({"status": "success", "message": "Lead captured"}), 200
 
-@app.route("/<slug>/product/delete/<int:product_id>")
+@app.route("/<slug>/product/delete/<int:product_id>", methods=["POST"])
 def delete_product(slug, product_id):
     if "merchant_id" not in session:
         return redirect("/login")
@@ -651,7 +608,7 @@ def delete_product(slug, product_id):
         return "Unauthorized action or product not found.", 403
 
     # 2. Extract Public ID and Kill the Cloud Image ☁️💀
-    img_url = product[0]["image_url"]
+    img_url = product[0].get("image_url")
     
     # We only try to delete if it's a Cloudinary link (not a placeholder)
     if img_url and "cloudinary.com" in img_url:
@@ -664,7 +621,7 @@ def delete_product(slug, product_id):
     
     return redirect(f"/{slug}/manage")
 
-@app.route("/<slug>/delete")
+@app.route("/<slug>/delete", methods=["POST"])
 def delete_kiosk(slug):
     if "merchant_id" not in session:
         return redirect("/login")
@@ -683,17 +640,17 @@ def delete_kiosk(slug):
 
     # 2. Gather ALL Image URLs to be purged
     urls_to_clean = [
-        kiosk_data["logo_url"],
-        kiosk_data["banner_url"],
-        kiosk_data["gallery_1"],
-        kiosk_data["gallery_2"],
-        kiosk_data["background_url"]
+        kiosk_data.get("logo_url"),
+        kiosk_data.get("banner_url"),
+        kiosk_data.get("gallery_1"),
+        kiosk_data.get("gallery_2"),
+        kiosk_data.get("background_url")
     ]
 
     # Add all product images from this kiosk to the list
     product_rows = db.execute("SELECT image_url FROM products WHERE kiosks_id = ?", k_id)
     for row in product_rows:
-        urls_to_clean.append(row["image_url"])
+        urls_to_clean.append(row.get("image_url"))
 
     # 3. The Cloudinary Clean-up ☁️💀
     for url in urls_to_clean:
@@ -714,10 +671,6 @@ def delete_kiosk(slug):
 
     return redirect("/dashboard")
 
-
-
-
-
 @app.route("/pay/<slug>")
 def initialize_payment(slug):
     if "merchant_id" not in session:
@@ -730,12 +683,13 @@ def initialize_payment(slug):
 
     # Paystack requires an email. We'll use a placeholder since we don't store merchant emails yet
     email = f"merchant_{session['merchant_id']}@marketplace.com"
-    amount = 10000 * 100  # ₦10,000 in Kobo 💰
+    amount_naira = 10000  # ₦10,000
+    amount = int(amount_naira * 100)  # Kobo
 
     # 2. Setup Paystack Payload
     url = "https://api.paystack.co/transaction/initialize"
     headers = {
-        "Authorization": f"Bearer {PAYSTACK_SECRET_KEY}",
+        "Authorization": f"Bearer {PAYSTACK_SECRET}",
         "Content-Type": "application/json"
     }
     data = {
@@ -753,13 +707,14 @@ def initialize_payment(slug):
         response = requests.post(url, json=data, headers=headers)
         res_data = response.json()
 
-        if res_data["status"]:
+        if res_data.get("status"):
             # Send them to the Paystack checkout page
             return redirect(res_data["data"]["authorization_url"])
         else:
-            return f"Paystack Init Failed: {res_data['message']}, {PAYSTACK_SECRET_KEY}", 400
+            # Don't leak secrets in error responses
+            return f"Paystack Init Failed: {res_data.get('message')}", 400
     except Exception as e:
-        return f"Connection Error: {e}, ", 500
+        return f"Connection Error: {e}", 500
 
 
 @app.route("/verify_payment/<slug>")
@@ -770,28 +725,41 @@ def verify_payment(slug):
 
     # 1. Verify with Paystack
     url = f"https://api.paystack.co/transaction/verify/{reference}"
-    headers = {"Authorization": f"Bearer {PAYSTACK_SECRET_KEY}"}
+    headers = {"Authorization": f"Bearer {PAYSTACK_SECRET}"}
 
     try:
         response = requests.get(url, headers=headers)
         res_data = response.json()
 
-        if res_data["status"] and res_data["data"]["status"] == "success":
+        if res_data.get("status") and res_data.get("data", {}).get("status") == "success":
             # Fetch the kiosk row to grab its true ID
             kiosk_rows = db.execute("SELECT id FROM kiosks WHERE slug = ?", slug)
             
             if kiosk_rows:
                 kiosk_id = kiosk_rows[0]["id"]
-                
+
+                # Prefer metadata merchant_id if provided by the initialization
+                metadata = res_data.get("data", {}).get("metadata", {}) or {}
+                metadata_merchant_id = metadata.get("merchant_id")
+
+                merchant_id_for_record = metadata_merchant_id if metadata_merchant_id else session.get("merchant_id")
+
                 # 📅 Compute expiration timestamp safely in Python
                 from datetime import datetime, timedelta
                 expiry_time = (datetime.now() + timedelta(days=30)).strftime('%Y-%m-%d %H:%M:%S')
-                
+
+                # Determine amount from Paystack response (amount is in kobo)
+                amount_paid_kobo = res_data.get("data", {}).get("amount")
+                try:
+                    amount_paid = float(amount_paid_kobo) / 100.0 if amount_paid_kobo is not None else None
+                except Exception:
+                    amount_paid = None
+
                 # 🟢 LOG PAYMENT: Explicitly mapping values to your exact schema column bindings
                 db.execute("""
                     INSERT INTO subscriptions (merchant_id, kiosk_id, status, amount_paid, expires_at)
-                    VALUES (?, ?, 'active', 10000.0, ?)
-                """, session["merchant_id"], kiosk_id, expiry_time)
+                    VALUES (?, ?, 'active', ?, ?)
+                """, merchant_id_for_record, kiosk_id, amount_paid if amount_paid is not None else 0.0, expiry_time)
 
             # 2. SUCCESS: Unlock the Kiosk 🔓
             db.execute("UPDATE kiosks SET is_active = 1 WHERE slug = ?", slug)
@@ -800,10 +768,6 @@ def verify_payment(slug):
             return "Payment verification failed. Please contact support.", 400
     except Exception as e:
         return f"Verification Error: {e}", 500  
-
-
-
-
 
 
 # Helper to handle dates
@@ -862,9 +826,13 @@ def update_entry(view, id):
     return redirect(url_for('db_explorer', view=view))
 
 # Action: Delete Entry (Handles Merchants, Kiosks, and Products)
-@app.route("/overlord/delete/<view>/<int:id>")
+@app.route("/overlord/delete/<view>/<int:id>", methods=["POST"])
 def delete_entry(view, id):
-    db.execute(f"DELETE FROM {view} WHERE id = ?", (id,))
+    # Validate view against a safe allowlist to avoid SQL injection
+    allowed = {"merchants": "merchants", "kiosks": "kiosks", "products": "products"}
+    if view not in allowed:
+        return "Invalid target for deletion.", 400
+    db.execute(f"DELETE FROM {allowed[view]} WHERE id = ?", (id,))
     return redirect(request.referrer or url_for('db_explorer', view=view))
 
 # Action: Toggle Kiosk Status
@@ -894,6 +862,7 @@ def update_kiosk_properties(id):
         WHERE id = ?
     """, (name, slug, desc, color, id))
     return redirect(url_for('db_explorer', view='kiosks'))
+
 @app.route("/overlord/update/kiosks/html/<int:id>", methods=["POST"])
 def update_kiosk_gen_html(id):
     new_html = request.form.get("generated_html")
@@ -948,7 +917,8 @@ def register_and_recommend():
             INSERT INTO customers (full_name, customer_ref_id, email, password) 
             VALUES (?, ?, ?, ?)
         """, full_name, ref_id, email, hashed_pw)
-        customer_id = db.execute("SELECT last_insert_rowid()")[0][0]
+        customer = db.execute("SELECT * FROM customers WHERE email = ?", email)
+        customer_id = customer[0]["id"] if customer else None
     else:
         # Verify existing user
         if not check_password_hash(user[0]['password'], password):
@@ -985,7 +955,7 @@ def merchant_premium():
             print(whatsapp)
             print(password)
             merchant = db.execute("SELECT * FROM merchants WHERE whatsapp_number = ?", whatsapp)
-            if merchant and password == merchant[0]['password']:
+            if merchant and check_password_hash(merchant[0]['password'], password):
                 session["merchant_id"] = merchant[0]["id"]
                 return redirect("/merchant/premium")
             else:
@@ -1013,7 +983,6 @@ def merchant_premium():
 
     return render_template("premium.html", merchant=merchant)
 
-PAYSTACK_SECRET = os.environ.get("PAYSTACK_KEY")
 
 
 @app.route("/merchant/upgrade", methods=["POST"])
@@ -1060,7 +1029,7 @@ def payment_callback():
     headers = {"Authorization": f"Bearer {PAYSTACK_SECRET}"}
     response = requests.get(url, headers=headers).json()
     
-    if response["status"] and response["data"]["status"] == "success":
+    if response.get("status") and response.get("data", {}).get("status") == "success":
         # Merchant paid! Update the DB
         merchant_email = response["data"]["customer"]["email"]
         merchant = db.execute("SELECT id FROM merchants WHERE email = ?", merchant_email)[0]
@@ -1126,11 +1095,13 @@ def signup_api():
         return jsonify({"success": False, "message": "Missing required fields"}), 400
 
     try:
+        # Hash password before storing
+        hashed_pw = generate_password_hash(password)
         # Insert into 'buyers' table
         db.execute("""
             INSERT INTO buyers (fullname, email, phone, campus, password) 
             VALUES (?, ?, ?, ?, ?)
-        """, name, email, phone, campus, password)
+        """, name, email, phone, campus, hashed_pw)
 
         # Log them in immediately after signup
         new_user = db.execute("SELECT id FROM buyers WHERE email = ?", email)
@@ -1153,7 +1124,7 @@ def login_api():
     # Check credentials
     rows = db.execute("SELECT * FROM buyers WHERE email = ?", email)
 
-    if len(rows) != 1 or rows[0]["password"] != password:
+    if len(rows) != 1 or not check_password_hash(rows[0]["password"], password):
         return jsonify({"success": False, "message": "Invalid email or password"}), 401
 
     # Set session variables
