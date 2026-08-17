@@ -29,6 +29,7 @@
         th { text-align: left; font-family: 'Montserrat'; font-size: 0.65rem; text-transform: uppercase; padding: 15px; color: var(--gray); border-bottom: 1px solid #eee; }
         td { padding: 18px 15px; border-bottom: 1px solid #f9f9f9; }
         .btn-add { background: var(--brand); color: white; padding: 14px 24px; text-decoration: none; font-family: 'Montserrat'; font-size: 0.7rem; font-weight: 600; float: right; }
+        .link-button { background: none; border: none; padding: 0; margin: 0; color: inherit; cursor: pointer; font-family: 'Montserrat'; font-size: 0.7rem; font-weight: 600; text-decoration: none; }
         @media (max-width: 900px) {
             body { flex-direction: column; }
             .sidebar { width: 100%; height: auto; position: relative; border-right: none; border-bottom: 1px solid #eee; }
@@ -50,11 +51,10 @@
             <a href="/{{ kiosk.slug }}" target="_blank" style="margin-top: 20px; color: var(--brand);">View Public Kiosk &nearr;</a>
         </nav>
         <div style="margin-top: 50px; padding-top: 20px; border-top: 1px solid #eee;">
-            <a href="/{{ kiosk.slug }}/delete" 
-               onclick="return confirm('EXTREME DANGER: This will delete the kiosk, all products, and all customer leads. There is no undo. Proceed?')"
-               style="color: #e74c3c; font-size: 0.7rem; font-weight: 600; text-decoration: none;">
-               × PERMANENTLY DELETE KIOSK
-            </a>
+            <form action="/{{ kiosk.slug }}/delete" method="post" onsubmit="return confirm('EXTREME DANGER: This will delete the kiosk, all products, and all customer leads. There is no undo. Proceed?');" style="display:inline;">
+                <!-- If you add CSRF, include the token here, e.g. {{ csrf_token() }} -->
+                <button type="submit" class="link-button" style="color: #e74c3c; font-size: 0.7rem;">× PERMANENTLY DELETE KIOSK</button>
+            </form>
         </div>
     </aside>
 
@@ -95,11 +95,10 @@
                             EDIT
                             </a>
                             
-                            <a href="/{{ kiosk.slug }}/product/delete/{{ p.id }}" 
-                            onclick="return confirm('Oga, are you sure? This will remove the product permanently!')"
-                            style="color: #e74c3c; font-size: 0.7rem; font-weight: 600; text-decoration: none;">
-                            DELETE
-                            </a>
+                            <form action="/{{ kiosk.slug }}/product/delete/{{ p.id }}" method="post" style="display:inline;" onsubmit="return confirm('Oga, are you sure? This will remove the product permanently!');">
+                                <!-- If you add CSRF, include the token here, e.g. {{ csrf_token() }} -->
+                                <button type="submit" class="link-button" style="color: #e74c3c; margin-left:6px;">DELETE</button>
+                            </form>
                         </td>
                     </tr>
                     {% endfor %}
@@ -135,7 +134,7 @@
                     {% for v in visitations %}
                     <tr>
                         <td style="font-family: monospace; font-size: 0.7rem;">{{ v.ip_hash[:12] }}</td>
-                        <td style="font-size: 0.75rem;">{{ v.user_agent[:40] }}...</td>
+                        <td style="font-size: 0.75rem;">{{ v.user_agent[:40] }}{% if v.user_agent|length > 40 %}...{% endif %}</td>
                         <td>{{ v.timestamp | wat }}</td>
                     </tr>
                     {% endfor %}
